@@ -93,7 +93,9 @@ input  MISOe,
 output CS_ne,
 
   output [3:0] ja_p,
-  output [3:0] ja_n
+  output [3:0] ja_n,
+  output [2:1] jb_p,
+  output [2:1] jb_n
 //  output [4:1] jb_p,
 //  output [4:1] jb_n,
 //  output [4:1] jc_p,
@@ -139,19 +141,27 @@ wire DDS_RWn_0;          //   output DDS_RWn_0;
 wire DDS_ReadEn_0;       //   output DDS_ReadEn_0;
 wire DDS_Ref;            //   output DDS_Ref;
 
-wire [5:0]Trans0Data;    // output [5:0]Trans0Data;
-wire [5:0]Trans1Data;    // output [5:0]Trans1Data;
-wire [5:0]Trans2Data;    // output [5:0]Trans2Data;
-wire [5:0]Trans3Data;    // output [5:0]Trans3Data;
-
 wire [1:0]FraimSel;   //  input [1:0]FraimSel;
 wire SelHDMI;         //  input SelHDMI;
 wire SelStat;         //  input SelStat;
 
-wire [3:0] SCLK;
-wire [3:0] MOSI;
-wire [3:0] MISO;
-wire [3:0] CS_n;
+//wire [5:0]Trans0Data;    // output [5:0]Trans0Data;
+//wire [5:0]Trans1Data;    // output [5:0]Trans1Data;
+//wire [5:0]Trans2Data;    // output [5:0]Trans2Data;
+//wire [5:0]Trans3Data;    // output [5:0]Trans3Data;
+
+//wire [3:0] SCLK;
+//wire [3:0] MOSI;
+//wire [3:0] MISO;
+//wire [3:0] CS_n;
+
+wire [3:0]CC1200GPIO_In   ; // input  [3:0]GPIO_In_0   ;
+wire [3:0]CC1200GPIO_OutEn; // output [3:0]GPIO_OutEn_0;
+wire [3:0]CC1200GPIO_Out  ; // output [3:0]GPIO_Out_0  ;
+wire      CC1200SCLK      ; // output SCLK_0           ;
+wire      CC1200CS_n      ; // output CS_n_0           ;
+wire      CC1200MOSI      ; // output MOSI_0           ;
+wire      CC1200MISO      ; // input  MISO_0           ;
     
 Drone_Cam_BD Drone_Cam_BD_inst
 (
@@ -203,29 +213,37 @@ Drone_Cam_BD Drone_Cam_BD_inst
 .SelHDMI (SelHDMI ),         //  input SelHDMI;
 .SelStat (SelStat ),         //  input SelStat;
 
-.DDS_CSn_0     (DDS_CSn_0    ),      //   output DDS_CSn_0;
-.DDS_DataIn_0  (DDS_DataIn_0 ),      //   input [7:0]DDS_DataIn_0;
-.DDS_DataOut_0 (DDS_DataOut_0),      //   output [7:0]DDS_DataOut_0;
-.DDS_IOup_0    (DDS_IOup_0   ),      //   output DDS_IOup_0;
-.DDS_PCLK_0    (DDS_PCLK_0   ),      //   output DDS_PCLK_0;
-.DDS_RWn_0     (DDS_RWn_0    ),      //   output DDS_RWn_0;
-.DDS_ReadEn_0  (DDS_ReadEn_0 ),      //   output DDS_ReadEn_0;
-.DDS_Ref       (DDS_Ref      ),      //   output DDS_Ref;
+//.DDS_CSn_0     (DDS_CSn_0    ),      //   output DDS_CSn_0;
+//.DDS_DataIn_0  (DDS_DataIn_0 ),      //   input [7:0]DDS_DataIn_0;
+//.DDS_DataOut_0 (DDS_DataOut_0),      //   output [7:0]DDS_DataOut_0;
+//.DDS_IOup_0    (DDS_IOup_0   ),      //   output DDS_IOup_0;
+//.DDS_PCLK_0    (DDS_PCLK_0   ),      //   output DDS_PCLK_0;
+//.DDS_RWn_0     (DDS_RWn_0    ),      //   output DDS_RWn_0;
+//.DDS_ReadEn_0  (DDS_ReadEn_0 ),      //   output DDS_ReadEn_0;
+//.DDS_Ref       (DDS_Ref      ),      //   output DDS_Ref;
 
 .TMDS_Clk_n_0 (hdmi_tx_clk_n ),   //   output TMDS_Clk_n_0;
 .TMDS_Clk_p_0 (hdmi_tx_clk_p ),   //   output TMDS_Clk_p_0;
 .TMDS_Data_n_0(hdmi_tx_data_n),   //   output [2:0]TMDS_Data_n_0;
 .TMDS_Data_p_0(hdmi_tx_data_p),   //   output [2:0]TMDS_Data_p_0;
 
-.SCLK_0(SCLK),
-.MOSI_0(MOSI),
-.MISO_0(MISO),
-.CS_n_0(CS_n),
+//.SCLK_0(SCLK),
+//.MOSI_0(MOSI),
+//.MISO_0(MISO),
+//.CS_n_0(CS_n),
  
-.Trans0Data    (Trans0Data),  //  output [5:0]Trans0Data;
-.Trans1Data    (Trans1Data),  //  output [5:0]Trans1Data;
-.Trans2Data    (Trans2Data),  //  output [5:0]Trans2Data;
-.Trans3Data    (Trans3Data)   //  output [5:0]Trans3Data;
+//.Trans0Data    (Trans0Data),  //  output [5:0]Trans0Data;
+//.Trans1Data    (Trans1Data),  //  output [5:0]Trans1Data;
+//.Trans2Data    (Trans2Data),  //  output [5:0]Trans2Data;
+//.Trans3Data    (Trans3Data)   //  output [5:0]Trans3Data;
+.GPIO_In_0    (CC1200GPIO_In   ), // input  [3:0]GPIO_In_0   ;
+.GPIO_OutEn_0 (CC1200GPIO_OutEn), // output [3:0]GPIO_OutEn_0;
+.GPIO_Out_0   (CC1200GPIO_Out  ), // output [3:0]GPIO_Out_0  ;
+.SCLK_0       (CC1200SCLK      ), // output SCLK_0           ;
+.CS_n_0       (CC1200CS_n      ), // output CS_n_0           ;
+.MOSI_0       (CC1200MOSI      ), // output MOSI_0           ;
+.MISO_0       (CC1200MISO      ) // input  MISO_0           ;
+
 
   );
 
@@ -303,7 +321,7 @@ assign led[3] = SelStatCount; //[0] }]; #IO_L23P_T3_35 Sch=led[0]
  assign DDS_DataIn_0[1] = jd_n[2];
  assign DDS_DataIn_0[0] = jd_n[4];
  */
-
+/*
 assign SCLKb = SCLK[0];
 assign MOSIb = MOSI[0];
 assign MISO[0] = MISOb;
@@ -323,7 +341,19 @@ assign SCLKe = SCLK[3];
 assign MOSIe = MOSI[3];
 assign MISO[3] = MISOe;
 assign CS_ne = CS_n[3];
+*/
 
+assign jb_p[1] = (CC1200GPIO_OutEn[0]) ? CC1200GPIO_Out[0] : 1'bz;
+assign jb_n[1] = (CC1200GPIO_OutEn[1]) ? CC1200GPIO_Out[1] : 1'bz;
+assign jb_p[2] = (CC1200GPIO_OutEn[2]) ? CC1200GPIO_Out[2] : 1'bz;
+assign jb_n[2] = (CC1200GPIO_OutEn[3]) ? CC1200GPIO_Out[3] : 1'bz;
+assign CC1200GPIO_In = {jb_n[2],jb_p[2],jb_n[1],jb_p[1]};
+
+assign SCLKb = CC1200SCLK;
+assign MOSIb = CC1200MOSI;
+assign CS_nb = CC1200CS_n;
+
+assign CC1200MISO = MISOb;
 
 //assign jb_p[1] = Trans0Data[0];
 //assign jb_n[1] = Trans0Data[1];
