@@ -109,9 +109,9 @@ set_property -dict {PACKAGE_PIN V7 IOSTANDARD LVCMOS33} [get_ports {jb_n[2]}]
 #set_property -dict {PACKAGE_PIN W6 IOSTANDARD LVCMOS33} [get_ports {jb_n[4]}]
 
 set_property -dict {PACKAGE_PIN Y7 IOSTANDARD LVCMOS33} [get_ports SCLKb]
-set_property -dict {PACKAGE_PIN Y6 IOSTANDARD LVCMOS33} [get_ports MOSIb]
-set_property -dict {PACKAGE_PIN V6 IOSTANDARD LVCMOS33} [get_ports MISOb]
-set_property -dict {PACKAGE_PIN W6 IOSTANDARD LVCMOS33} [get_ports CS_nb]
+set_property -dict {PACKAGE_PIN Y6 IOSTANDARD LVCMOS33} [get_ports CS_nb]
+set_property -dict {PACKAGE_PIN V6 IOSTANDARD LVCMOS33} [get_ports MOSIb]
+set_property -dict {PACKAGE_PIN W6 IOSTANDARD LVCMOS33} [get_ports MISOb]
 
 
 ##Pmod Header JC

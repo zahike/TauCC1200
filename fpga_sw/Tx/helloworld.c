@@ -50,7 +50,14 @@
 #include "xil_printf.h"
 #include "SCCB.h"
 #define START_FREQ   0x100
+#define TX
+//#define RX
+#define Tx_wait 0xffff
+#define Tx_Pkt_size 124
+#define Rx_Pkt_size 124
+
 u32 *APB = XPAR_APB_M_0_BASEADDR;
+u32 *CC1200 = XPAR_APB_M_1_BASEADDR;
 //u32 *DDS = XPAR_APB_M_1_BASEADDR;
 
 int writeSCCB (int WriteData);
@@ -60,13 +67,22 @@ void Camera_init();
 void cfg_VGA_60fps();
 void cfg_advanced_awb();
 
+void ResetCC1200();
+
+int writeSCC120 (int add, int data);
+int readSCC120 (int add);
+int writeLCC120 (int add, int data);
+int readLCC120 (int add);
+
+void TxCC1200_init(int Pkt_size);
+void RxCC1200_init(int Pkt_size);
 
 int main()
 {
 	int freq;
 	int Hdata,Ldata,CamID;
 	int loop;
-	int Data;
+	int Data,data;
 	int Add1,Add2;
 	int pll = 0;
     init_platform();
@@ -74,6 +90,50 @@ int main()
     xil_printf("Hello World\n\r");
 	sleep(1);
 
+	xil_printf("===== Set Up Transmitter =====\n\r");
+    xil_printf("Reset CC1200\n\r");
+    ResetCC1200();
+
+    xil_printf("Configure CC1200\n\r");
+    TxCC1200_init(Tx_Pkt_size);
+
+    CC1200[4] = 4;        // switch to command mode
+    xil_printf("set chip to Tx\n\r");
+    CC1200[2] = 0x350000; // set chip to Tx
+    CC1200[0] = 1;
+	loop = 1;
+	while (loop)
+	{
+		loop = CC1200[1];
+	};
+
+    CC1200[2] = 0x3d0000;  // check if module in Tx
+    data = 0;
+    while ((data != 0x20) && (data != 0x10))
+    {
+		CC1200[0] = 1;
+		loop = 1;
+		while (loop)
+		{
+			loop = CC1200[1];
+		};
+		data = CC1200[3] & 0xf0;
+		if ((data != 0x20) && (data != 0x10))
+		{
+			xil_printf("Chip is not set\n\r");
+		}
+    }
+    if (data == 0x20){
+	xil_printf("Switch to Tx seccesfuly in Tx\n\r");
+    } else if (data == 0x10){
+	xil_printf("Switch to Rx seccesfuly in Rx\n\r");
+    }
+
+    CC1200[11] = Tx_wait; // Tx Pkt Size
+    CC1200[9] = Tx_Pkt_size; // Tx Pkt Size
+   	CC1200[0] = 2; // Enable Tx
+
+	xil_printf("===== Set Up Camera =====\n\r");
     APB[5] = START_FREQ; // set SCCB clock to ~200Khz
 	freq = 1000000/(START_FREQ*20);
 	xil_printf("frequency %d \n\r",freq);
@@ -94,56 +154,6 @@ int main()
 	} else {
 		xil_printf("Camera ID incorrect :(:(  Read %x \n\r",CamID);
 	}
-/*
-	xil_printf("Clear DDS \n\r");
-	for (int i=0x12;i<0x26;i=i+2){
-		Add1 = i << 24;
-		Add2 = i+1 << 8;
-	    DDS[2] = Add1+Add2;
-	    DDS[4] = 0x00000000;
-	    DDS[0] = 0x00000001;
-	}
-	xil_printf("Set DDS \n\r");
-   loop = 1;
-    DDS[2] = 0x04120514;
-    DDS[4] = 0x00000000;
-    DDS[0] = 0x00000001;
-    while (loop == 1){
-    	loop = DDS[1];
-    };
-    while (pll==0){
-		loop = 1;
-		DDS[2] = 0x04120514;
-		DDS[4] = 0x00000001;
-		DDS[0] = 0x00000001;
-		while (loop == 1){
-			loop = DDS[1];
-		};
-		Data = DDS[3];
-		if ((Data & 0x00010000) != 0) {
-			pll = 1;
-			};
-		xil_printf("Read Data %x\n\r",Data);
-    };
-    loop = 1;
-    DDS[2] = 0x06ff0713;
-    DDS[4] = 0x00000000;
-    DDS[0] = 0x00000001;
-    while (loop == 1){
-    	loop = DDS[1];
-    };
-    loop = 1;
-    DDS[2] = 0x0c000d42;
-    DDS[4] = 0x00000000;
-    DDS[0] = 0x00000001;
-    while (loop == 1){
-    	loop = DDS[1];
-    };
-	xil_printf(" DDS Confug \n\r");
-
-    DDS[4] = 0x00000002;
-*/
-
 
 	//[1]=0 System input clock from pad; Default read = 0x11
 	writeSCCB(0x78310311);

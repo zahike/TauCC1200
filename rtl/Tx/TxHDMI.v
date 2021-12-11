@@ -34,9 +34,9 @@ output        Out_pVDE  ,
 output        Mem_Read,
 
 input         FraimSync,
-input  [23:0] Mem_Data 
+input  [23:0] Mem_Data, 
 
-
+output [15:0] DELine_counter
     );
 reg [31:0] Vsync_counter;
 reg [15:0] Hsync_counter;
@@ -46,6 +46,8 @@ reg        Reg_HSync;
 reg        activeData;
 reg        Reg_pVDE;
 reg        Reg_MemRead;
+
+assign DELine_counter = Line_counter;
 
 ///////////////////////////////////////////////////////
 /////////////// HDMI control Signals //////////////////

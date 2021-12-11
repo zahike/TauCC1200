@@ -94,8 +94,8 @@ output CS_ne,
 
   output [3:0] ja_p,
   output [3:0] ja_n,
-  output [2:1] jb_p,
-  output [2:1] jb_n
+  inout  [2:1] jb_p,
+  inout  [2:1] jb_n
 //  output [4:1] jb_p,
 //  output [4:1] jb_n,
 //  output [4:1] jc_p,

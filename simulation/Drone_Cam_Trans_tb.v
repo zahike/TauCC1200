@@ -79,14 +79,14 @@ m_axis_video_tuser  = 0;   // input         s_axis_video_tuser ,
 m_axis_video_tlast  = 0;   // input         s_axis_video_tlast , 
 @(posedge rstn);
 #100;
-repeat (20)begin 
+repeat (5)begin 
         wrLine(1);
         repeat (479) wrLine(0);
 //        repeat (1000000) @(posedge clk);
         #4620608;
         @(posedge clk);
     end
-#10000000;    
+#1000000;    
 $finish;    
 end
 
@@ -199,7 +199,7 @@ GPIO_In = 4'h0;
 @(posedge rstn);
 #1000;
 WriteAXI(32'h00000014,32'h00000004);
-WriteAXI(32'h00000024,32'h00000012);
+WriteAXI(32'h00000024,32'h0000007c);
 WriteAXI(32'h0000002c,32'h00000012);
 WriteAXI(32'h00000000,32'h00000002);
 
