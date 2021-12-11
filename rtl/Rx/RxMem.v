@@ -25,6 +25,7 @@ input Cclk,
 input rstn,
 
 input FraimSync,
+input LineSync,
 
 input [11:0] RxData,
 input        RxValid,
@@ -35,6 +36,8 @@ input  [3:0] SCLK,
 input  [3:0] MOSI,
 output [3:0] MISO,
 input  [3:0] CS_n,
+
+output [15:0] DEWMadd,
 
 input HVsync  ,
 input HMemRead,
@@ -66,12 +69,24 @@ SPI_Rx SPI_Rx_inst(
     );
 end
 endgenerate
+reg DelLineSync;
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) DelLineSync <= 1'b0;
+    else DelLineSync <= LineSync;
+    
+reg [15:0] NextLineAdd;
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) NextLineAdd <= 16'h004f;
+     else if (DelLineSync && !LineSync) NextLineAdd <= NextLineAdd + 16'h0050;
 
 reg [15:0] WMadd;
 always @(posedge Cclk or negedge rstn) 
     if (!rstn) WMadd <= 16'h0000;
      else if (FraimSync) WMadd <= 16'h0000; 
      else if (RxValid)   WMadd <= WMadd + 1;
+     else if (LineSync)  WMadd <= NextLineAdd; 
+
+assign DEWMadd = WMadd;
      
 reg [11:0] YMem0 [0:38399]; // 95ff
 reg [11:0] YMem1 [0:38399]; // 95ff

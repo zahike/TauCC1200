@@ -42,11 +42,13 @@ input  [3:0]  GPIO_In,
 input        GetDataEn,
 input [11:0] GetData,
 output       Next_data,
+input        TranFrame,
 
 output [11:0] RxData,
 output       RxValid,
 
 output FrameSync,
+output LineSync,
 
 output wire [15:0] CS_nCounter,
 output wire [7:0] ShiftMISO,
@@ -123,6 +125,7 @@ always @(posedge clk or negedge rstn)
      else if (Load_Next) Get_Data <= {Get_Data[23:0],SPIDataIn}; 
 assign DataIn = Get_Data;
 assign FrameSync = (Get_Data == RegVsync) ? 1'b1 : 1'b0;
+assign LineSync  = (Get_Data == RegHsync) ? 1'b1 : 1'b0;
 
 reg [3:0] Send_Stop;
 always @(posedge clk or negedge rstn)
@@ -200,6 +203,8 @@ always @(posedge clk or negedge rstn)
      else if (Tran_SPI_count != 3'b101) TxSPIdatactrl <= 2'b00;
      else if (TxSPIdatactrl == 2'b11) TxSPIdatactrl <= 2'b00;
      else if (Load_Next) TxSPIdatactrl <= TxSPIdatactrl + 1;
+
+wire [31:0] HeadTran = (TranFrame) ? RegVsync : RegHsync;
      
 reg [11:0] TxSavePreData;
 always @(posedge clk or negedge rstn) 
@@ -283,10 +288,10 @@ wire SPIstop  = (Trans) ? !TransOn :
 
 wire [7:0] SPIdata = 
                      (Trans && (Tran_SPI_count == 3'b000)) ? RegCommand       :
-                     (Trans && (Tran_SPI_count == 3'b001)) ? RegVsync[31:24]  :
-                     (Trans && (Tran_SPI_count == 3'b010)) ? RegVsync[23:16]  :
-                     (Trans && (Tran_SPI_count == 3'b011)) ? RegVsync[15: 8]  :
-                     (Trans && (Tran_SPI_count == 3'b100)) ? RegVsync[ 7: 0]  :
+                     (Trans && (Tran_SPI_count == 3'b001)) ? HeadTran[31:24]  :
+                     (Trans && (Tran_SPI_count == 3'b010)) ? HeadTran[23:16]  :
+                     (Trans && (Tran_SPI_count == 3'b011)) ? HeadTran[15: 8]  :
+                     (Trans && (Tran_SPI_count == 3'b100)) ? HeadTran[ 7: 0]  :
                      (Trans && (Tran_SPI_count == 3'b101)) ? Byte2SPI         : 
                      (Receive && !ReadRxFIFO)              ? RegRxCommand     :
                      (Receive &&  ReadRxFIFO)              ? 8'h00            :
@@ -325,11 +330,6 @@ always @(posedge clk or negedge rstn)
     if (!rstn) Reg_CS_nCounter <= 16'h0000;
      else if (CS_n && !DelCS_n) Reg_CS_nCounter <= Reg_CS_nCounter + 1;
 assign CS_nCounter = Reg_CS_nCounter;    
-//reg [2:0] RegMISOCount;
-//always @(posedge clk or negedge clk)
-//    if (!rstn) RegMISOCount <= 3'b000;
-//     else if (CS_n) RegMISOCount <= 3'b000;
-//     else if (!SCLK && DelSCLK) RegMISOCount <= RegMISOCount + 1;
 reg [7:0] Reg_ShiftMISO;
 always @(posedge clk or negedge rstn)
     if (!rstn) Reg_ShiftMISO <= 8'h00;

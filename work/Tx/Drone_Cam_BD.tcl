@@ -960,6 +960,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net TxMem_0_PixelClk [get_bd_pins TxHDMI_0/clk] [get_bd_pins TxMem_0/PixelClk] [get_bd_pins rgb2dvi_0/PixelClk]
   connect_bd_net -net TxMem_0_TranData [get_bd_pins CC1200SPI_Top_0/GetData] [get_bd_pins TxMem_0/TranData]
   connect_bd_net -net TxMem_0_TranEn [get_bd_pins CC1200SPI_Top_0/GetDataEn] [get_bd_pins TxMem_0/TranEn]
+  connect_bd_net -net TxMem_0_TranFrame [get_bd_pins CC1200SPI_Top_0/TranFrame] [get_bd_pins TxMem_0/TranFrame]
   connect_bd_net -net axi_apb_bridge_0_m_apb_paddr [get_bd_pins SCCBGPIO_Top_0/S_APB_0_paddr] [get_bd_pins axi_apb_bridge_0/m_apb_paddr]
   connect_bd_net -net axi_apb_bridge_0_m_apb_penable [get_bd_pins SCCBGPIO_Top_0/S_APB_0_penable] [get_bd_pins axi_apb_bridge_0/m_apb_penable]
   connect_bd_net -net axi_apb_bridge_0_m_apb_psel [get_bd_pins SCCBGPIO_Top_0/S_APB_0_psel] [get_bd_pins axi_apb_bridge_0/m_apb_psel]

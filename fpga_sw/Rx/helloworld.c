@@ -52,8 +52,8 @@
 
 //#define TX
 #define RX
-#define Tx_Pkt_size 0x12
-#define Rx_Pkt_size 0x12
+#define Tx_Pkt_size 124
+#define Rx_Pkt_size 124
 u32 *CC1200 = XPAR_APB_M_0_BASEADDR;
 
 void ResetCC1200();

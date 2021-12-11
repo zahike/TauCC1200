@@ -44,7 +44,8 @@ output [23:0] HDMIdata,
 
 output TranEn,
 output [11:0] TranData,
-input NextData
+input NextData,
+output TranFrame
 
     );
 
@@ -234,32 +235,8 @@ always @(posedge Cclk or negedge rstn)
 assign TranEn  = TranOn;
 assign TranData = Reg_TranData0;
 
+assign TranFrame = (TRadd == 16'h0000) ? 1'b1 : 1'b0;
 
-//reg [11:0] Reg_TranData0;
-//reg [11:0] Reg_TranData1;
-//reg [11:0] Reg_TranData2;
-//reg [11:0] Reg_TranData3;
-//always @(posedge Cclk or negedge rstn)
-//    if (!rstn) Reg_TranData0 <= 12'h000;
-//     else if (Cnt_Div_Clk == 3'b010) Reg_TranData0 <= Reg_YMem0;
-//always @(posedge Cclk or negedge rstn)
-//    if (!rstn) Reg_TranData1 <= 12'h000;
-//     else if (Cnt_Div_Clk == 3'b010) Reg_TranData1 <= Reg_YMem1;
-//always @(posedge Cclk or negedge rstn)
-//    if (!rstn) Reg_TranData2 <= 12'h000;
-//     else if (Cnt_Div_Clk == 3'b010) Reg_TranData2 <= Reg_YMem2;
-//always @(posedge Cclk or negedge rstn)
-//    if (!rstn) Reg_TranData3 <= 12'h000;
-//     else if (Cnt_Div_Clk == 3'b010) Reg_TranData3 <= Reg_YMem3;
-     
-//wire [11:0] TranInData[0:3]; 
 
-//assign TranInData[0] = Reg_TranData0;
-//assign TranInData[1] = Reg_TranData1;
-//assign TranInData[2] = Reg_TranData2;
-//assign TranInData[3] = Reg_TranData3;
-
-//wire Tran1Start = (CWadd == 20'h0603d) ? 1'b1 : 1'b0;
-//wire [15:0] TRadd_test;     
 
 endmodule

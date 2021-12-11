@@ -120,7 +120,7 @@ wire [7:0] Trans3Data;
 wire TranEn          ;
 wire [11:0] TranData ;
 wire NextData        ;
-
+wire TranFrame       ; // output TranFrame
 wire SCLK;
 wire MOSI;
 wire MISO = 1'b0;
@@ -160,8 +160,8 @@ TxMem TxMem_inst(
 
 .TranEn  (TranEn  ),     // output TranEn,      
 .TranData(TranData),   // output [11:0] TranData,
-.NextData(NextData)    // input NextData
-      
+.NextData(NextData),    // input NextData
+.TranFrame(TranFrame) // output TranFrame      
     );
 
 reg SelHDMI;
@@ -232,6 +232,7 @@ end
     .GetDataEn(TranEn),                // input wire GetDataEn;
     .GetData(TranData),                    // input wire [11 : 0] GetData;
     .Next_data(NextData),                // output wire Next_data;
+    .TranFrame(TranFrame),               // output TranFrame      
     .RxData(RxData),                      // output wire [11 : 0] RxData;
     .RxValid(RxValid),                    // output wire RxValid;
     .FrameSync(FrameSync),                // output wire FrameSync;
