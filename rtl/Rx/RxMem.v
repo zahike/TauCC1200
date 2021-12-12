@@ -76,13 +76,16 @@ always @(posedge Cclk or negedge rstn)
     
 reg [15:0] NextLineAdd;
 always @(posedge Cclk or negedge rstn) 
-    if (!rstn) NextLineAdd <= 16'h004f;
+    if (!rstn) NextLineAdd <= 16'h0050;
+     else if (FraimSync) NextLineAdd <= 16'h0050;
+     else if (NextLineAdd == 16'h9600) NextLineAdd <= 16'h9600;
      else if (DelLineSync && !LineSync) NextLineAdd <= NextLineAdd + 16'h0050;
 
 reg [15:0] WMadd;
 always @(posedge Cclk or negedge rstn) 
     if (!rstn) WMadd <= 16'h0000;
      else if (FraimSync) WMadd <= 16'h0000; 
+     else if (WMadd == 16'h9600) WMadd <= 16'h9600;
      else if (RxValid)   WMadd <= WMadd + 1;
      else if (LineSync)  WMadd <= NextLineAdd; 
 
