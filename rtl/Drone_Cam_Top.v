@@ -61,7 +61,7 @@ inout cam_iic_sda_io,
   output      hdmi_tx_clk_p   ,
   output [2:0]hdmi_tx_data_n  ,
   output [2:0]hdmi_tx_data_p  ,
-  input       sys_clock       ,
+  input       sysclk       ,
   input  [3:0] sw,
   input  [3:0] btn,
   output [3:0] led, //[0] }]; #IO_L23P_T3_35 Sch=led[0]  
@@ -105,6 +105,7 @@ output CS_ne,
 //  output [8:1] je
     );
 
+wire Ex_rstn = ~btn[0];    
 
 /////////////////////////////////////////////////////////
 /////////////////      Drone Cam BD       ///////////////
@@ -163,7 +164,8 @@ wire      CC1200CS_n      ; // output CS_n_0           ;
 wire      CC1200MOSI      ; // output MOSI_0           ;
 wire      CC1200MISO      ; // input  MISO_0           ;
     
-Drone_Cam_BD Drone_Cam_BD_inst
+//Drone_Cam_BD Drone_Cam_BD_inst
+TauDesignTx_BD TauDesignTx_BD_inst
 (
 .DDR_addr(DDR_addr),		//inout [14:0] DDR_addr
 .DDR_ba(DDR_ba),        //inout [2:0] DDR_ba
@@ -187,7 +189,8 @@ Drone_Cam_BD Drone_Cam_BD_inst
 .FIXED_IO_ps_porb(FIXED_IO_ps_porb),        //inout  FIXED_IO_ps_porb
 .FIXED_IO_ps_srstb(FIXED_IO_ps_srstb),        //inout  FIXED_IO_ps_srstb
 
-.sys_clock      (sys_clock),
+.sys_clock      (sysclk),
+.ext_reset_in   (Ex_rstn),        //input  ext_reset_in
 .FCLK_CLK2_0    (ILA_clk),
 .rstn           (rstn),   //output [0:0]rstn;
 

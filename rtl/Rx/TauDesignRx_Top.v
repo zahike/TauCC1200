@@ -94,7 +94,6 @@ TauDesignRx_BD TauDesignRx_BD_inst
 (
 .sysclk(sysclk),        //input  sysclk
 .ext_reset_in(rstn),        //input  ext_reset_in
-.CS_n_0(CS_n_0),		//input [3:0] CS_n_0
 .CS_n_1(CS_n_1),        //output  CS_n_1
 .DDR_addr(DDR_addr),        //inout [14:0] DDR_addr
 .DDR_ba(DDR_ba),        //inout [2:0] DDR_ba
@@ -120,11 +119,8 @@ TauDesignRx_BD TauDesignRx_BD_inst
 .GPIO_In_0   (GPIO_In),        //input [3:0] GPIO_In_0
 .GPIO_OutEn_0(GPIO_OutEn),        //output [3:0] GPIO_OutEn_0
 .GPIO_Out_0  (GPIO_Out),        //output [3:0] GPIO_Out_0
-.MISO_0(MISO_0),        //output [3:0] MISO_0
 .MISO_1(MISO_1),        //input  MISO_1
-.MOSI_0(MOSI_0),        //input [3:0] MOSI_0
 .MOSI_1(MOSI_1),        //output  MOSI_1
-.SCLK_0(SCLK_0),        //input [3:0] SCLK_0
 .SCLK_1(SCLK_1),        //output  SCLK_1
 .TMDS_Clk_n_0 (hdmi_tx_clk_n ),        //output  TMDS_Clk_n_0
 .TMDS_Clk_p_0 (hdmi_tx_clk_p ),        //output  TMDS_Clk_p_0

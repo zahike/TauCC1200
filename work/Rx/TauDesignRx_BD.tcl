@@ -230,16 +230,12 @@ proc create_root_design { parentCell } {
   set FIXED_IO [ create_bd_intf_port -mode Master -vlnv xilinx.com:display_processing_system7:fixedio_rtl:1.0 FIXED_IO ]
 
   # Create ports
-  set CS_n_0 [ create_bd_port -dir I -from 3 -to 0 CS_n_0 ]
   set CS_n_1 [ create_bd_port -dir O CS_n_1 ]
   set GPIO_In_0 [ create_bd_port -dir I -from 3 -to 0 GPIO_In_0 ]
   set GPIO_OutEn_0 [ create_bd_port -dir O -from 3 -to 0 GPIO_OutEn_0 ]
   set GPIO_Out_0 [ create_bd_port -dir O -from 3 -to 0 GPIO_Out_0 ]
-  set MISO_0 [ create_bd_port -dir O -from 3 -to 0 MISO_0 ]
   set MISO_1 [ create_bd_port -dir I MISO_1 ]
-  set MOSI_0 [ create_bd_port -dir I -from 3 -to 0 MOSI_0 ]
   set MOSI_1 [ create_bd_port -dir O MOSI_1 ]
-  set SCLK_0 [ create_bd_port -dir I -from 3 -to 0 SCLK_0 ]
   set SCLK_1 [ create_bd_port -dir O SCLK_1 ]
   set TMDS_Clk_n_0 [ create_bd_port -dir O TMDS_Clk_n_0 ]
   set TMDS_Clk_p_0 [ create_bd_port -dir O TMDS_Clk_p_0 ]
@@ -753,10 +749,8 @@ proc create_root_design { parentCell } {
   connect_bd_net -net CC1200SPI_Top_0_RxData [get_bd_pins CC1200SPI_Top_0/RxData] [get_bd_pins RxMem_0/RxData] [get_bd_pins ila_0/probe0]
   connect_bd_net -net CC1200SPI_Top_0_RxValid [get_bd_pins CC1200SPI_Top_0/RxValid] [get_bd_pins RxMem_0/RxValid] [get_bd_pins ila_0/probe1]
   connect_bd_net -net CC1200SPI_Top_0_SCLK [get_bd_ports SCLK_1] [get_bd_pins CC1200SPI_Top_0/SCLK] [get_bd_pins ila_0/probe2]
-  connect_bd_net -net CS_n_0_1 [get_bd_ports CS_n_0] [get_bd_pins RxMem_0/CS_n]
   connect_bd_net -net GPIO_In_0_1 [get_bd_ports GPIO_In_0] [get_bd_pins CC1200SPI_Top_0/GPIO_In]
   connect_bd_net -net MISO_1_1 [get_bd_ports MISO_1] [get_bd_pins CC1200SPI_Top_0/MISO] [get_bd_pins ila_0/probe4]
-  connect_bd_net -net MOSI_0_1 [get_bd_ports MOSI_0] [get_bd_pins RxMem_0/MOSI]
   connect_bd_net -net RxHDMI_0_Mem_Read [get_bd_pins RxHDMI_0/Mem_Read] [get_bd_pins RxMem_0/HMemRead] [get_bd_pins RxSyncPic_0/HMemRead]
   connect_bd_net -net RxHDMI_0_Out_pData [get_bd_pins RxHDMI_0/Out_pData] [get_bd_pins rgb2dvi_0/vid_pData]
   connect_bd_net -net RxHDMI_0_Out_pHSync [get_bd_pins RxHDMI_0/Out_pHSync] [get_bd_pins rgb2dvi_0/vid_pVSync]
@@ -764,9 +758,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net RxHDMI_0_Out_pVSync [get_bd_pins RxHDMI_0/Out_pVSync] [get_bd_pins RxMem_0/HVsync] [get_bd_pins RxSyncPic_0/HVsync] [get_bd_pins rgb2dvi_0/vid_pHSync]
   connect_bd_net -net RxMem_0_DEWMadd [get_bd_pins RxMem_0/DEWMadd] [get_bd_pins ila_0/probe8]
   connect_bd_net -net RxMem_0_HDMIdata [get_bd_pins RxHDMI_0/Mem_Data] [get_bd_pins RxMem_0/HDMIdata]
-  connect_bd_net -net RxMem_0_MISO [get_bd_ports MISO_0] [get_bd_pins RxMem_0/MISO]
   connect_bd_net -net RxSyncPic_0_PixelClk [get_bd_pins RxHDMI_0/clk] [get_bd_pins RxMem_0/PixelClk] [get_bd_pins rgb2dvi_0/PixelClk]
-  connect_bd_net -net SCLK_0_1 [get_bd_ports SCLK_0] [get_bd_pins RxMem_0/SCLK]
   connect_bd_net -net axi_apb_bridge_0_m_apb_paddr [get_bd_pins CC1200SPI_Top_0/APB_S_0_paddr] [get_bd_pins axi_apb_bridge_0/m_apb_paddr]
   connect_bd_net -net axi_apb_bridge_0_m_apb_penable [get_bd_pins CC1200SPI_Top_0/APB_S_0_penable] [get_bd_pins axi_apb_bridge_0/m_apb_penable]
   connect_bd_net -net axi_apb_bridge_0_m_apb_psel [get_bd_pins CC1200SPI_Top_0/APB_S_0_psel] [get_bd_pins axi_apb_bridge_0/m_apb_psel]
@@ -803,4 +795,6 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
+
+common::send_msg_id "BD_TCL-1000" "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 
