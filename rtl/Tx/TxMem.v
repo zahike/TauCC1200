@@ -35,17 +35,19 @@ input         s_axis_video_tlast ,
 output FraimSync,
 input[1:0]  FraimSel,
 
+output TranEn,
+output [11:0] TranData,
+input NextData,
+output TranFrame,
+output [15:0] TranAdd,
+
 output PixelClk,
 
 input HVsync  ,
 input HMemRead,
 input pVDE    ,
-output [23:0] HDMIdata,
+output [23:0] HDMIdata
 
-output TranEn,
-output [11:0] TranData,
-input NextData,
-output TranFrame
 
     );
 
@@ -236,6 +238,7 @@ assign TranEn  = TranOn;
 assign TranData = Reg_TranData0;
 
 assign TranFrame = (TRadd == 16'h0000) ? 1'b1 : 1'b0;
+assign TranAdd  = TRadd;
 
 
 

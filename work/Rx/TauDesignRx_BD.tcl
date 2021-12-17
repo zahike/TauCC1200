@@ -134,6 +134,7 @@ xilinx.com:ip:ila:6.2\
 xilinx.com:ip:proc_sys_reset:5.0\
 xilinx.com:ip:processing_system7:5.5\
 digilentinc.com:ip:rgb2dvi:1.4\
+xilinx.com:ip:xlconstant:1.1\
 "
 
    set list_ips_missing ""
@@ -319,12 +320,12 @@ proc create_root_design { parentCell } {
    CONFIG.C_DATA_DEPTH {16384} \
    CONFIG.C_ENABLE_ILA_AXI_MON {false} \
    CONFIG.C_MONITOR_TYPE {Native} \
-   CONFIG.C_NUM_OF_PROBES {9} \
+   CONFIG.C_NUM_OF_PROBES {10} \
    CONFIG.C_PROBE0_WIDTH {12} \
    CONFIG.C_PROBE6_WIDTH {1} \
    CONFIG.C_PROBE7_WIDTH {1} \
    CONFIG.C_PROBE8_WIDTH {16} \
-   CONFIG.C_PROBE9_WIDTH {1} \
+   CONFIG.C_PROBE9_WIDTH {8} \
  ] $ila_0
 
   # Create instance: proc_sys_reset_0, and set properties
@@ -729,6 +730,23 @@ proc create_root_design { parentCell } {
   # Create instance: rst_clk_wiz_0_50M, and set properties
   set rst_clk_wiz_0_50M [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_clk_wiz_0_50M ]
 
+  # Create instance: xlconstant_0, and set properties
+  set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0 ]
+
+  # Create instance: xlconstant_2, and set properties
+  set xlconstant_2 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_2 ]
+  set_property -dict [ list \
+   CONFIG.CONST_VAL {0} \
+   CONFIG.CONST_WIDTH {16} \
+ ] $xlconstant_2
+
+  # Create instance: xlconstant_3, and set properties
+  set xlconstant_3 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_3 ]
+  set_property -dict [ list \
+   CONFIG.CONST_VAL {0} \
+   CONFIG.CONST_WIDTH {12} \
+ ] $xlconstant_3
+
   # Create interface connections
   connect_bd_intf_net -intf_net S00_AXI_1 [get_bd_intf_pins processing_system7_0/M_AXI_GP0] [get_bd_intf_pins ps7_0_axi_periph/S00_AXI]
   connect_bd_intf_net -intf_net axi_apb_bridge_0_APB_M [get_bd_intf_ports APB_M_0] [get_bd_intf_pins axi_apb_bridge_0/APB_M]
@@ -746,9 +764,12 @@ proc create_root_design { parentCell } {
   connect_bd_net -net CC1200SPI_Top_0_GPIO_OutEn [get_bd_ports GPIO_OutEn_0] [get_bd_pins CC1200SPI_Top_0/GPIO_OutEn]
   connect_bd_net -net CC1200SPI_Top_0_LineSync [get_bd_pins CC1200SPI_Top_0/LineSync] [get_bd_pins RxMem_0/LineSync] [get_bd_pins ila_0/probe7]
   connect_bd_net -net CC1200SPI_Top_0_MOSI [get_bd_ports MOSI_1] [get_bd_pins CC1200SPI_Top_0/MOSI] [get_bd_pins ila_0/probe3]
+  connect_bd_net -net CC1200SPI_Top_0_RxAdd [get_bd_pins CC1200SPI_Top_0/RxAdd] [get_bd_pins RxMem_0/RxAdd]
+  connect_bd_net -net CC1200SPI_Top_0_RxAddValid [get_bd_pins CC1200SPI_Top_0/RxAddValid] [get_bd_pins RxMem_0/RxAddValid]
   connect_bd_net -net CC1200SPI_Top_0_RxData [get_bd_pins CC1200SPI_Top_0/RxData] [get_bd_pins RxMem_0/RxData] [get_bd_pins ila_0/probe0]
   connect_bd_net -net CC1200SPI_Top_0_RxValid [get_bd_pins CC1200SPI_Top_0/RxValid] [get_bd_pins RxMem_0/RxValid] [get_bd_pins ila_0/probe1]
   connect_bd_net -net CC1200SPI_Top_0_SCLK [get_bd_ports SCLK_1] [get_bd_pins CC1200SPI_Top_0/SCLK] [get_bd_pins ila_0/probe2]
+  connect_bd_net -net CC1200SPI_Top_0_ShiftMISO [get_bd_pins CC1200SPI_Top_0/ShiftMISO] [get_bd_pins ila_0/probe9]
   connect_bd_net -net GPIO_In_0_1 [get_bd_ports GPIO_In_0] [get_bd_pins CC1200SPI_Top_0/GPIO_In]
   connect_bd_net -net MISO_1_1 [get_bd_ports MISO_1] [get_bd_pins CC1200SPI_Top_0/MISO] [get_bd_pins ila_0/probe4]
   connect_bd_net -net RxHDMI_0_Mem_Read [get_bd_pins RxHDMI_0/Mem_Read] [get_bd_pins RxMem_0/HMemRead] [get_bd_pins RxSyncPic_0/HMemRead]
@@ -776,6 +797,9 @@ proc create_root_design { parentCell } {
   connect_bd_net -net rst_clk_wiz_0_50M_interconnect_aresetn [get_bd_pins ps7_0_axi_periph/ARESETN] [get_bd_pins rst_clk_wiz_0_50M/interconnect_aresetn]
   connect_bd_net -net rst_clk_wiz_0_50M_peripheral_aresetn [get_bd_pins CC1200SPI_Top_0/APBrstn] [get_bd_pins axi_apb_bridge_0/s_axi_aresetn] [get_bd_pins ps7_0_axi_periph/M00_ARESETN] [get_bd_pins ps7_0_axi_periph/S00_ARESETN] [get_bd_pins rst_clk_wiz_0_50M/peripheral_aresetn]
   connect_bd_net -net sysclk_1 [get_bd_ports sysclk] [get_bd_pins clk_wiz_0/clk_in1]
+  connect_bd_net -net xlconstant_0_dout [get_bd_pins CC1200SPI_Top_0/GetDataEn] [get_bd_pins CC1200SPI_Top_0/TranFrame] [get_bd_pins xlconstant_0/dout]
+  connect_bd_net -net xlconstant_2_dout [get_bd_pins CC1200SPI_Top_0/TranAdd] [get_bd_pins xlconstant_2/dout]
+  connect_bd_net -net xlconstant_3_dout [get_bd_pins CC1200SPI_Top_0/GetData] [get_bd_pins xlconstant_3/dout]
 
   # Create address segments
   create_bd_addr_seg -range 0x00010000 -offset 0x43C00000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs APB_M_0/Reg] SEG_APB_M_0_Reg
@@ -795,6 +819,4 @@ proc create_root_design { parentCell } {
 
 create_root_design ""
 
-
-common::send_msg_id "BD_TCL-1000" "WARNING" "This Tcl script was generated from a block design that has not been validated. It is possible that design <$design_name> may result in errors during validation."
 

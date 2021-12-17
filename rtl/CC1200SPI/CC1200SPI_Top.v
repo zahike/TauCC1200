@@ -43,9 +43,12 @@ input        GetDataEn,
 input [11:0] GetData,
 output       Next_data,
 input        TranFrame,
+input [15:0] TranAdd,
 
 output [11:0] RxData,
-output       RxValid,
+output        RxValid,
+output [15:0] RxAdd,
+output        RxAddValid,
 
 output FrameSync,
 output LineSync,
@@ -74,7 +77,7 @@ wire        Receive      ; // output Receive
 wire [7:0]  Tx_Pkt_size  ; // output [7:0] Tx_Pkt_size,
 wire [7:0]  Rx_Pkt_size  ; // output [7:0] Rx_Pkt_size,
 wire [15:0] Tx_wait      ; // output [15:0] Tx_wait,
-
+wire signed [7:0]  CorThre      ; //output [7:0]  CorThre,
 
 CC1200SPI_Regs CC1200SPI_Regs_inst(
 .clk(APBclk),
@@ -101,7 +104,7 @@ CC1200SPI_Regs CC1200SPI_Regs_inst(
 .Tx_Pkt_size(Tx_Pkt_size),   // output [7:0] Tx_Pkt_size,
 .Rx_Pkt_size(Rx_Pkt_size),   // output [7:0] Rx_Pkt_size,
 .Tx_wait    (Tx_wait    ),   // output [15:0] Tx_wait,
-
+.CorThre    (CorThre    ),  //output [7:0]  CorThre,
 
 .Trans     (Trans     ),     // output Trans
 .Receive   (Receive   ) // output Receive
@@ -119,14 +122,49 @@ always @(posedge clk or negedge rstn)
     if (!rstn) Send_Data <= 32'h00000000;
      else if (CS_n) Send_Data <= DataOut;
      else if ((DevCS_n == 2'b10) || Load_Next) Send_Data <= {Send_Data[23:0],8'h00}; 
+
+reg [2:0] Rx_SPI_count;     
+reg DelSCLK;
+always @(posedge clk or negedge rstn)
+    if (!rstn) DelSCLK <= 1'b0;
+     else DelSCLK <= SCLK;
 reg [31:0] Get_Data;
 always @(posedge clk or negedge rstn)
     if (!rstn) Get_Data <= 32'h00000000;
-     else if (Load_Next) Get_Data <= {Get_Data[23:0],SPIDataIn}; 
+     else if (!DelSCLK && SCLK) Get_Data <= {Get_Data[30:0],MISO}; 
 assign DataIn = Get_Data;
-assign FrameSync = (Get_Data == RegVsync) ? 1'b1 : 1'b0;
-assign LineSync  = (Get_Data == RegHsync) ? 1'b1 : 1'b0;
+assign ShiftMISO = Get_Data[7:0];
 
+reg [4:0] CorCount;
+always @(posedge clk or negedge rstn)
+    if (!rstn) CorCount <= 5'h07;
+     else if (CS_n) CorCount <= 5'h07;
+     else if (DelSCLK && !SCLK) CorCount <= CorCount - 1;
+ 
+//assign FrameSync = (Get_Data == RegVsync) ? 1'b1 : 1'b0;
+//assign LineSync  = (Get_Data == RegHsync) ? 1'b1 : 1'b0;
+
+reg signed [7:0] FramCorCount;
+always @(posedge clk or negedge rstn)
+    if (!rstn) FramCorCount <= 8'h00;
+     else if (Rx_SPI_count == 3'b000) FramCorCount <= 8'h00;
+     else if (Rx_SPI_count == 3'b111) FramCorCount <= 8'h00;
+     else if ((!DelSCLK && SCLK) && (MISO == RegVsync[CorCount])) FramCorCount <= FramCorCount + 1;
+     else if ((!DelSCLK && SCLK) && (MISO != RegVsync[CorCount])) FramCorCount <= FramCorCount - 1;
+reg signed [7:0] LineCorCount;
+always @(posedge clk or negedge rstn)
+    if (!rstn) LineCorCount <= 8'h00;
+     else if (Rx_SPI_count == 3'b000) LineCorCount <= 8'h00;
+     else if (Rx_SPI_count == 3'b111) LineCorCount <= 8'h00;
+     else if ((!DelSCLK && SCLK) && (MISO == RegHsync[CorCount])) LineCorCount <= LineCorCount + 1;
+     else if ((!DelSCLK && SCLK) && (MISO != RegHsync[CorCount])) LineCorCount <= LineCorCount - 1;
+
+assign FrameSync = (FramCorCount > CorThre) ? 1'b1 : 1'b0;
+assign LineSync  = (LineCorCount > CorThre) ? 1'b1 : 1'b0;
+
+assign RxAdd      = Get_Data[15:0];
+assign RxAddValid = (Rx_SPI_count == 3'b110) ? Load_Next : 1'b0;
+     
 reg [3:0] Send_Stop;
 always @(posedge clk or negedge rstn)
     if (!rstn) Send_Stop <= 4'h0;
@@ -193,14 +231,14 @@ reg [2:0] Tran_SPI_count;
 always @(posedge clk or negedge rstn) 
     if (!rstn) Tran_SPI_count <= 3'b000;
      else if (!TransOn) Tran_SPI_count <= 3'b000;
-     else if (Tran_SPI_count == 3'b101) Tran_SPI_count <= 3'b101;
+     else if (Tran_SPI_count == 3'b111) Tran_SPI_count <= 3'b111;
      else if (DevTranStart == 2'b01) Tran_SPI_count <=3'b001;  
      else if (Load_Next) Tran_SPI_count <= Tran_SPI_count + 1;  
 
 reg [1:0] TxSPIdatactrl;
 always @(posedge clk or negedge rstn) 
     if (!rstn) TxSPIdatactrl <= 2'b00;
-     else if (Tran_SPI_count != 3'b101) TxSPIdatactrl <= 2'b00;
+     else if (Tran_SPI_count != 3'b111) TxSPIdatactrl <= 2'b00;
      else if (TxSPIdatactrl == 2'b11) TxSPIdatactrl <= 2'b00;
      else if (Load_Next) TxSPIdatactrl <= TxSPIdatactrl + 1;
 
@@ -211,12 +249,12 @@ always @(posedge clk or negedge rstn)
     if (!rstn) TxSavePreData <= 12'h000;
      else if (Load_Next) TxSavePreData <= GetData;
     
-wire [7:0] Byte2SPI = (Tran_SPI_count != 3'b101) ? 8'h00                             :
+wire [7:0] Byte2SPI = (Tran_SPI_count != 3'b111) ? 8'h00                             :
                       (TxSPIdatactrl == 2'b00)   ? GetData[7:0]                      :
                       (TxSPIdatactrl == 2'b01)   ? {GetData[3:0],TxSavePreData[11:8]}:
                       (TxSPIdatactrl == 2'b10)   ? TxSavePreData[11:4]               : 8'h00;
                       
-assign Next_data = (Tran_SPI_count != 3'b101) ? 1'b0 : 
+assign Next_data = (Tran_SPI_count != 3'b111) ? 1'b0 : 
                    (TxSPIdatactrl  ==  2'b10) ? 1'b0 : Load_Next ;
 
 /////////////////// End of Transmit Data from Memory ///////////////////
@@ -248,18 +286,17 @@ always @(posedge clk or negedge rstn)
      else if (!ReadRxFIFO) ReadRxCounter <= 8'h00;
      else if (Load_Next) ReadRxCounter <= ReadRxCounter + 1;
 
-reg [2:0] Rx_SPI_count;
 always @(posedge clk or negedge rstn) 
     if (!rstn) Rx_SPI_count <= 3'b000;
      else if (!ReadRxFIFO) Rx_SPI_count <= 3'b000;
-     else if (Rx_SPI_count == 3'b101) Rx_SPI_count <= 3'b101;
+     else if (Rx_SPI_count == 3'b111) Rx_SPI_count <= 3'b111;
      else if (negRxPkt) Rx_SPI_count <=3'b001;  
      else if (Load_Next) Rx_SPI_count <= Rx_SPI_count + 1;  
 
 reg [1:0] RxSPIdatactrl;
 always @(posedge clk or negedge rstn) 
     if (!rstn) RxSPIdatactrl <= 2'b00;
-     else if (Rx_SPI_count != 3'b101) RxSPIdatactrl <= 2'b00;
+     else if (Rx_SPI_count != 3'b111) RxSPIdatactrl <= 2'b00;
      else if (RxSPIdatactrl == 2'b11) RxSPIdatactrl <= 2'b00;
      else if (Load_Next) RxSPIdatactrl <= RxSPIdatactrl + 1;
 
@@ -292,7 +329,9 @@ wire [7:0] SPIdata =
                      (Trans && (Tran_SPI_count == 3'b010)) ? HeadTran[23:16]  :
                      (Trans && (Tran_SPI_count == 3'b011)) ? HeadTran[15: 8]  :
                      (Trans && (Tran_SPI_count == 3'b100)) ? HeadTran[ 7: 0]  :
-                     (Trans && (Tran_SPI_count == 3'b101)) ? Byte2SPI         : 
+                     (Trans && (Tran_SPI_count == 3'b101)) ? TranAdd[15: 8]  :
+                     (Trans && (Tran_SPI_count == 3'b110)) ? TranAdd[ 7: 0]  :
+                     (Trans && (Tran_SPI_count == 3'b111)) ? Byte2SPI         : 
                      (Receive && !ReadRxFIFO)              ? RegRxCommand     :
                      (Receive &&  ReadRxFIFO)              ? 8'h00            :
                      Send_Data[23:16];
@@ -321,19 +360,19 @@ reg DelCS_n;
 always @(posedge clk or negedge rstn)
     if (!rstn) DelCS_n <= 1'b0;
      else DelCS_n <= CS_n;
-reg DelSCLK;
-always @(posedge clk or negedge rstn)
-    if (!rstn) DelSCLK <= 1'b0;
-     else DelSCLK <= SCLK;
+//reg DelSCLK;
+//always @(posedge clk or negedge rstn)
+//    if (!rstn) DelSCLK <= 1'b0;
+//     else DelSCLK <= SCLK;
 reg [15:0] Reg_CS_nCounter;
 always @(posedge clk or negedge rstn)
     if (!rstn) Reg_CS_nCounter <= 16'h0000;
      else if (CS_n && !DelCS_n) Reg_CS_nCounter <= Reg_CS_nCounter + 1;
 assign CS_nCounter = Reg_CS_nCounter;    
-reg [7:0] Reg_ShiftMISO;
-always @(posedge clk or negedge rstn)
-    if (!rstn) Reg_ShiftMISO <= 8'h00;
-//     else if (CS_n) Reg_ShiftMISO <= 8'h00;
-     else if (DelSCLK && !SCLK) Reg_ShiftMISO <= {Reg_ShiftMISO[6:0],MISO};
-assign ShiftMISO = Reg_ShiftMISO;     
+//reg [7:0] Reg_ShiftMISO;
+//always @(posedge clk or negedge rstn)
+//    if (!rstn) Reg_ShiftMISO <= 8'h00;
+////     else if (CS_n) Reg_ShiftMISO <= 8'h00;
+//     else if (DelSCLK && !SCLK) Reg_ShiftMISO <= {Reg_ShiftMISO[6:0],MISO};
+//assign ShiftMISO = Reg_ShiftMISO;     
 endmodule

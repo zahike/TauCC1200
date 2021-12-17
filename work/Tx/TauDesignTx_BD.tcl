@@ -958,6 +958,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net TxMem_0_FraimSync [get_bd_pins TxHDMI_0/FraimSync] [get_bd_pins TxMem_0/FraimSync]
   connect_bd_net -net TxMem_0_HDMIdata [get_bd_pins TxHDMI_0/Mem_Data] [get_bd_pins TxMem_0/HDMIdata]
   connect_bd_net -net TxMem_0_PixelClk [get_bd_pins TxHDMI_0/clk] [get_bd_pins TxMem_0/PixelClk] [get_bd_pins rgb2dvi_0/PixelClk]
+  connect_bd_net -net TxMem_0_TranAdd [get_bd_pins CC1200SPI_Top_0/TranAdd] [get_bd_pins TxMem_0/TranAdd]
   connect_bd_net -net TxMem_0_TranData [get_bd_pins CC1200SPI_Top_0/GetData] [get_bd_pins TxMem_0/TranData]
   connect_bd_net -net TxMem_0_TranEn [get_bd_pins CC1200SPI_Top_0/GetDataEn] [get_bd_pins TxMem_0/TranEn]
   connect_bd_net -net TxMem_0_TranFrame [get_bd_pins CC1200SPI_Top_0/TranFrame] [get_bd_pins TxMem_0/TranFrame]

@@ -52,8 +52,9 @@
 
 //#define TX
 #define RX
-#define Tx_Pkt_size 124
-#define Rx_Pkt_size 124
+#define Tx_Pkt_size 126
+#define Rx_Pkt_size 126
+#define Cor_Thre 20
 u32 *CC1200 = XPAR_APB_M_0_BASEADDR;
 
 void ResetCC1200();
@@ -146,6 +147,7 @@ int main()
 	MEM[0] = 1;		// send data from FIFO
 #endif
 #ifdef RX
+    CC1200[12] = Cor_Thre; // Rx Pkt Size
     CC1200[10] = Rx_Pkt_size + 2; // Rx Pkt Size
     CC1200[0] = 4; // Enable Rx
 #endif

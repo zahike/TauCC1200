@@ -45,6 +45,7 @@ input  [3:0]  GPIO_In,
 output [7:0] Tx_Pkt_size,
 output [7:0] Rx_Pkt_size,
 output [15:0] Tx_wait,
+output [7:0]  CorThre,
 
 output Trans,
 output Receive
@@ -107,6 +108,13 @@ always @(posedge clk or negedge rstn)
     if (!rstn) Reg_Tx_wait <= 16'h0000;
      else if (APB_S_0_penable && APB_S_0_psel && APB_S_0_pwrite && (APB_S_0_paddr[7:0] == 8'h2c)) Reg_Tx_wait <= APB_S_0_pwdata[7:0];
 assign Tx_wait = Reg_Tx_wait;
+reg [7:0] Reg_CorThre;
+always @(posedge clk or negedge rstn)
+    if (!rstn) Reg_CorThre <= 16'h0000;
+     else if (APB_S_0_penable && APB_S_0_psel && APB_S_0_pwrite && (APB_S_0_paddr[7:0] == 8'h30)) Reg_CorThre <= APB_S_0_pwdata[7:0];
+assign CorThre = Reg_CorThre;
+
+//output [7:0]  CorThre,
 
 assign APB_S_0_prdata = (APB_S_0_paddr[7:0] == 8'h00) ? {29'h00000000,RegReceive,RegTrans,RegStart} :
                         (APB_S_0_paddr[7:0] == 8'h04) ? {31'h00000000,Busy}              :
@@ -120,6 +128,7 @@ assign APB_S_0_prdata = (APB_S_0_paddr[7:0] == 8'h00) ? {29'h00000000,RegReceive
                         (APB_S_0_paddr[7:0] == 8'h24) ? {24'h000000,Reg_Tx_Pkt_size}     : 
                         (APB_S_0_paddr[7:0] == 8'h28) ? {24'h000000,Reg_Rx_Pkt_size}     : 
                         (APB_S_0_paddr[7:0] == 8'h2c) ? {16'h0000,Reg_Tx_wait}           : 
+                        (APB_S_0_paddr[7:0] == 8'h30) ? {24'h000000,Reg_CorThre}         : 
                         32'h00000000;
 
 reg Reg_pready;

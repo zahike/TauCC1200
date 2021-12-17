@@ -53,8 +53,8 @@
 #define TX
 //#define RX
 #define Tx_wait 0xffff
-#define Tx_Pkt_size 124
-#define Rx_Pkt_size 124
+#define Tx_Pkt_size 126
+#define Rx_Pkt_size 126
 
 u32 *APB = XPAR_APB_M_0_BASEADDR;
 u32 *CC1200 = XPAR_APB_M_1_BASEADDR;

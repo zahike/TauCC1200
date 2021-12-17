@@ -121,6 +121,8 @@ wire TranEn          ;
 wire [11:0] TranData ;
 wire NextData        ;
 wire TranFrame       ; // output TranFrame
+wire [15:0] TranAdd  ; //output [15:0] TranAdd,
+
 wire SCLK;
 wire MOSI;
 wire MISO = 1'b0;
@@ -161,7 +163,8 @@ TxMem TxMem_inst(
 .TranEn  (TranEn  ),     // output TranEn,      
 .TranData(TranData),   // output [11:0] TranData,
 .NextData(NextData),    // input NextData
-.TranFrame(TranFrame) // output TranFrame      
+.TranFrame(TranFrame), // output TranFrame    
+.TranAdd (TranAdd) // output [15:0] TranAdd,  
     );
 
 reg SelHDMI;
@@ -199,7 +202,7 @@ GPIO_In = 4'h0;
 @(posedge rstn);
 #1000;
 WriteAXI(32'h00000014,32'h00000004);
-WriteAXI(32'h00000024,32'h0000007c);
+WriteAXI(32'h00000024,32'h0000007e);
 WriteAXI(32'h0000002c,32'h00000012);
 WriteAXI(32'h00000000,32'h00000002);
 
@@ -233,6 +236,7 @@ end
     .GetData(TranData),                    // input wire [11 : 0] GetData;
     .Next_data(NextData),                // output wire Next_data;
     .TranFrame(TranFrame),               // output TranFrame      
+    .TranAdd (TranAdd),                  // output [15:0] TranAdd,  
     .RxData(RxData),                      // output wire [11 : 0] RxData;
     .RxValid(RxValid),                    // output wire RxValid;
     .FrameSync(FrameSync),                // output wire FrameSync;

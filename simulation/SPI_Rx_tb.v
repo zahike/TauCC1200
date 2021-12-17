@@ -72,15 +72,21 @@ wire [3:0]  GPIO_OutEn;          // output [3:0]  GPIO_OutEn,
 wire [3:0]  GPIO_Out  ;            // output [3:0]  GPIO_Out,
 reg  [3:0]  GPIO_In   ;             // input  [3:0]  GPIO_In,
                                 // 
-reg        GetDataEn;            // input        GetDataEn,
-reg [11:0] GetData  ;              // input [11:0] GetData,
-wire       Next_data;            // output       Next_data,
+reg         GetDataEn;            // input        GetDataEn,
+reg  [11:0] GetData  ;              // input [11:0] GetData,
+wire        Next_data;            // output       Next_data,
+reg         TranFrame;          // input        TranFrame,
+reg  [15:0] TranAdd  ;          // input [15:0] TranAdd,
+
                                 // 
 wire [11:0] RxData ;              // output [11:0] RxData,
 wire        RxValid;              // output       RxValid,
+wire [15:0] RxAdd     ;        // output [15:0] RxAdd,
+wire        RxAddValid;        // output        RxAddValid,
                                 // 
 wire FrameSync;                 // output FrameSync,
-                                 // 
+wire LineSync;               // output LineSync,
+ 
 wire [15:0] CS_nCounter;    // output wire [15:0] CS_nCounter,
 wire [7:0] ShiftMISO   ;       // output wire [7:0] ShiftMISO,
                                  // 
@@ -98,13 +104,18 @@ initial begin
 TxMISO = 1'b0;
 GetDataEn = 1'b0;            // input        GetDataEn,
 GetData  = 12'h111;              // input [11:0] GetData,
+//TranFrame = 1'b1;          // input        TranFrame,
+TranFrame = 1'b0;            // input        TranFrame,
+//TranAdd   = 16'h0000  ;          // input [15:0] TranAdd,
+TranAdd   = 16'h0050  ;          // input [15:0] TranAdd,
 TxRxn   = 1'b1;
 TxAndRx = 1'b1; // config both
 GPIO_In = 4'h0;
 @(posedge rstn);
 WriteAXI(32'h00000014,32'h00000004);
-WriteAXI(32'h00000024,32'h00000010);
-WriteAXI(32'h00000028,32'h00000010);
+WriteAXI(32'h00000024,32'h00000012);
+WriteAXI(32'h00000028,32'h00000014);
+WriteAXI(32'h00000030,32'h00000018);
 TxRxn   = 1'b0; // config Rx
 TxAndRx = 1'b0; 
 WriteAXI(32'h00000000,32'h00000004);
@@ -118,6 +129,7 @@ GetDataEn = 1'b1;            // input        GetDataEn,
 #1;
 @(negedge Next_data);            // output       Next_data,
 #1;
+TranFrame = 1'b0;          // input        TranFrame,
 GetData  = 12'h222;              // input [11:0] GetData,
 #1;
 @(posedge Next_data);            // output       Next_data,
@@ -171,44 +183,6 @@ GPIO_In = 4'h0;
 //@(posedge Next_data);            // output       Next_data,
 
 
-
-/*
-WriteAXI(32'h00000014,32'h00000004);
-WriteAXI(32'h00000028,32'h00000010);
-WriteAXI(32'h00000000,32'h00000004);
-#1000;
-GPIO_In = 4'h8;
-#1000;
-GPIO_In = 4'h0;
-
-repeat (8) begin 
-    @(negedge SCLK);
-    #1;
-    end
-ShiftRegMISO = 32'h930b51de;
-repeat (32) begin 
-    @(negedge SCLK);
-    #1;
-    end
-ShiftRegMISO = 32'h11212233;
-repeat (32) begin 
-    @(negedge SCLK);
-    #1;
-    end
-ShiftRegMISO = 32'h43445565;
-repeat (32) begin 
-    @(negedge SCLK);
-    #1;
-    end
-ShiftRegMISO = 32'h66778788;
-repeat (32) begin 
-    @(negedge SCLK);
-    #1;
-    end
-ShiftRegMISO = 32'h00000000;
-#1000;
-*/
-
 end
 
 
@@ -234,11 +208,13 @@ CC1200SPI_Top CC1200SPI_Tx_Top_inst(
 .GetDataEn(GetDataEn),                        // input        GetDataEn,
 .GetData  (GetData  ),                          // input [11:0] GetData,
 .Next_data(Next_data),                        // output       Next_data,
+.TranFrame(TranFrame), // input TranFrame    
+.TranAdd (TranAdd),    // input [15:0] TranAdd,  
                                   // 
 .RxData ( ),                          // output [11:0] RxData,
 .RxValid(),                          // output       RxValid,
                                         // 
-.FrameSync(FrameSync),                              // output FrameSync,
+.FrameSync(),                              // output FrameSync,
                                         // 
 .CS_nCounter(),                // output wire [15:0] CS_nCounter,
 .ShiftMISO  (),                   // output wire [7:0] ShiftMISO,
@@ -257,12 +233,12 @@ reg [1:0] DevRxSCLK;
 always @(posedge clk or negedge rstn) 
     if (!rstn) DevRxSCLK <= 2'b00;
      else DevRxSCLK <= {DevRxSCLK[0],RxSCLK};
-reg [140:0] ShiftMOSI2MISO;
+reg [180:0] ShiftMOSI2MISO;
 reg [7:0] RxMISOadd;
 always @(posedge TxSCLK or negedge rstn)
-    if (!rstn) ShiftMOSI2MISO <= {141{1'b0}}; 
-     else if (RxMISOadd > 7) ShiftMOSI2MISO <= {ShiftMOSI2MISO[139:0],TxMOSI};
-     else ShiftMOSI2MISO <= {ShiftMOSI2MISO[139:0],1'b0};
+    if (!rstn) ShiftMOSI2MISO <= {181{1'b0}}; 
+     else if (RxMISOadd > 7) ShiftMOSI2MISO <= {ShiftMOSI2MISO[179:0],TxMOSI};
+     else ShiftMOSI2MISO <= {ShiftMOSI2MISO[179:0],1'b0};
     
 always @(posedge clk or negedge rstn) 
     if (!rstn) RxMISOadd <= 8'h00;
@@ -290,15 +266,18 @@ CC1200SPI_Top CC1200SPI_Rx_Top_inst(
 .GPIO_Out  (),                               // output [3:0]  GPIO_Out,
 .GPIO_In   (GPIO_In),                                // input  [3:0]  GPIO_In,
                                       // 
-.GetDataEn(GetDataEn),                        // input        GetDataEn,
-.GetData  (GetData  ),                          // input [11:0] GetData,
+.GetDataEn(),                        // input        GetDataEn,
+.GetData  (),                          // input [11:0] GetData,
 .Next_data(),                        // output       Next_data,
                                   // 
 .RxData (RxData ),                          // output [11:0] RxData,
 .RxValid(RxValid),                          // output       RxValid,
+.RxAdd     (RxAdd     ),        // output [15:0] RxAdd,
+.RxAddValid(RxAddValid),        // output        RxAddValid,
                                         // 
-.FrameSync(FrameSync),                              // output FrameSync,
-                                        // 
+.FrameSync(FrameSync),            // output FrameSync,
+.LineSync (LineSync ),            // output LineSync,                                        
+ 
 .CS_nCounter(),                // output wire [15:0] CS_nCounter,
 .ShiftMISO  (),                   // output wire [7:0] ShiftMISO,
                                         // 
@@ -307,6 +286,44 @@ CC1200SPI_Top CC1200SPI_Rx_Top_inst(
 .MISO(RxMISO),                                   // input  MISO,
 .CS_n(RxCS_n)                                    // output CS_n
     );
+
+//wire Cclk;               // input wire Cclk;
+//wire rstn;               // input wire rstn;
+//wire FraimSync;          // input wire FraimSync;
+//wire LineSync;           // input wire LineSync;
+//wire [11 : 0] RxData;    // input wire [11 : 0] RxData;
+//wire RxValid;            // input wire RxValid;
+wire PixelClk;          // output wire PixelClk;
+wire [3 : 0] SCLK;       // input wire [3 : 0] SCLK;
+wire [3 : 0] MOSI;       // input wire [3 : 0] MOSI;
+wire [3 : 0] MISO;      // output wire [3 : 0] MISO;
+wire [3 : 0] CS_n;       // input wire [3 : 0] CS_n;
+wire [15 : 0] DEWMadd;  // output wire [15 : 0] DEWMadd;
+wire HVsync;             // input wire HVsync;
+wire HMemRead;           // input wire HMemRead;
+wire pVDE;               // input wire pVDE;
+wire [23 : 0] HDMIdata; // output wire [23 : 0] HDMIdata;
+
+  RxMem RxMem_inst (
+    .Cclk(clk),
+    .rstn(rstn),
+    .FraimSync(FrameSync),
+    .LineSync (LineSync ),
+    .RxData(RxData),
+    .RxValid(RxValid),
+    .RxAdd     (RxAdd     ),
+    .RxAddValid(RxAddValid),    
+    .PixelClk(PixelClk),
+    .SCLK(SCLK),
+    .MOSI(MOSI),
+    .MISO(MISO),
+    .CS_n(CS_n),
+    .DEWMadd(DEWMadd),
+    .HVsync(HVsync),
+    .HMemRead(HMemRead),
+    .pVDE(pVDE),
+    .HDMIdata(HDMIdata)
+  );
 
 //////////////////////////////////////////////////
 /////////////// Read/write tasks /////////////////

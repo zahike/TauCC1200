@@ -29,13 +29,15 @@ input LineSync,
 
 input [11:0] RxData,
 input        RxValid,
+input [15:0] RxAdd,
+input        RxAddValid,
 
 output PixelClk,
 
-input  [3:0] SCLK,
-input  [3:0] MOSI,
-output [3:0] MISO,
-input  [3:0] CS_n,
+//input  [3:0] SCLK,
+//input  [3:0] MOSI,
+//output [3:0] MISO,
+//input  [3:0] CS_n,
 
 output [15:0] DEWMadd,
 
@@ -46,10 +48,10 @@ output [23:0] HDMIdata
 
     );
 
-wire [3:0] SPIDataValid;
+wire [3:0] SPIDataValid = 0;
 wire [11:0] SPIData[3:0];
 wire [15:0] SPIDataAdd[3:0];
-
+/*
 genvar i;
 
 generate 
@@ -69,6 +71,7 @@ SPI_Rx SPI_Rx_inst(
     );
 end
 endgenerate
+*/
 reg DelLineSync;
 always @(posedge Cclk or negedge rstn) 
     if (!rstn) DelLineSync <= 1'b0;
@@ -87,7 +90,8 @@ always @(posedge Cclk or negedge rstn)
      else if (FraimSync) WMadd <= 16'h0000; 
      else if (WMadd == 16'h9600) WMadd <= 16'h9600;
      else if (RxValid)   WMadd <= WMadd + 1;
-     else if (LineSync)  WMadd <= NextLineAdd; 
+     else if (RxAddValid)  WMadd <= RxAdd; 
+//     else if (LineSync)  WMadd <= NextLineAdd; 
 
 assign DEWMadd = WMadd;
      
@@ -98,12 +102,12 @@ reg [11:0] YMem3 [0:38399]; // 95ff
 always @(posedge Cclk)
 //    if (SPIDataValid[0]) YMem0[SPIDataAdd[0]] <= SPIData[0];
     if (RxValid) YMem0[WMadd] <= RxData;
-always @(posedge Cclk)                 
-    if (SPIDataValid[1]) YMem1[SPIDataAdd[1]] <= SPIData[1];
-always @(posedge Cclk)                
-    if (SPIDataValid[2]) YMem2[SPIDataAdd[2]] <= SPIData[2];
-always @(posedge Cclk)                 
-    if (SPIDataValid[3]) YMem3[SPIDataAdd[3]] <= SPIData[3];
+//always @(posedge Cclk)                 
+//    if (SPIDataValid[1]) YMem1[SPIDataAdd[1]] <= SPIData[1];
+//always @(posedge Cclk)                
+//    if (SPIDataValid[2]) YMem2[SPIDataAdd[2]] <= SPIData[2];
+//always @(posedge Cclk)                 
+//    if (SPIDataValid[3]) YMem3[SPIDataAdd[3]] <= SPIData[3];
 
 ///////////////////////////  TRANSFRT DATA TO SCREAN  ///////////////////////////  
 reg [2:0] Cnt_Div_Clk;
@@ -134,17 +138,17 @@ reg [15:0] TRadd;
 wire [15:0] readMemAdd = (!Reg_Div_Clk) ? HRadd[19:3] : TRadd;
 
 reg [11:0] Reg_YMem0;
-reg [11:0] Reg_YMem1;
-reg [11:0] Reg_YMem2;
-reg [11:0] Reg_YMem3;
+wire [11:0] Reg_YMem1 = 12'h000;
+wire [11:0] Reg_YMem2 = 12'h000;
+wire [11:0] Reg_YMem3 = 12'h000;
 always @(posedge Cclk)
     Reg_YMem0 <=  YMem0[readMemAdd];
-always @(posedge Cclk)
-    Reg_YMem1 <=  YMem1[readMemAdd];
-always @(posedge Cclk)
-    Reg_YMem2 <=  YMem2[readMemAdd];
-always @(posedge Cclk)
-    Reg_YMem3 <=  YMem3[readMemAdd];
+//always @(posedge Cclk)
+//    Reg_YMem1 <=  YMem1[readMemAdd];
+//always @(posedge Cclk)
+//    Reg_YMem2 <=  YMem2[readMemAdd];
+//always @(posedge Cclk)
+//    Reg_YMem3 <=  YMem3[readMemAdd];
 
 always @(posedge Cclk or negedge rstn)
     if (!rstn) HRadd <= 20'h00001;
