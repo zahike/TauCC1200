@@ -119,37 +119,37 @@ int main()
 		loop = CC1200[1];
 	};
 
-    CC1200[2] = 0x3d0000;  // check if module in Tx
-    data = 0;
-    while ((data != 0x20) && (data != 0x10))
-    {
-		CC1200[0] = 1;
-		loop = 1;
-		while (loop)
-		{
-			loop = CC1200[1];
-		};
-		data = CC1200[3] & 0xf0;
-		if ((data != 0x20) && (data != 0x10))
-		{
-			xil_printf("Chip is not set\n\r");
-		}
-    }
-    if (data == 0x20){
-	xil_printf("Switch to Tx seccesfuly in Tx\n\r");
-    } else if (data == 0x10){
-	xil_printf("Switch to Rx seccesfuly in Rx\n\r");
-    }
-
-#ifdef TX
-    CC1200[9] = Tx_Pkt_size; // Tx Pkt Size
-   	CC1200[0] = 2; // Enable Tx
-	MEM[0] = 1;		// send data from FIFO
-#endif
+//    CC1200[2] = 0x3d0000;  // check if module in Tx
+//    data = 0;
+//    while ((data != 0x20) && (data != 0x10))
+//    {
+//		CC1200[0] = 1;
+//		loop = 1;
+//		while (loop)
+//		{
+//			loop = CC1200[1];
+//		};
+//		data = CC1200[3] & 0xf0;
+//		if ((data != 0x20) && (data != 0x10))
+//		{
+//			xil_printf("Chip is not set\n\r");
+//		}
+//    }
+//    if (data == 0x20){
+//	xil_printf("Switch to Tx seccesfuly in Tx\n\r");
+//    } else if (data == 0x10){
+//	xil_printf("Switch to Rx seccesfuly in Rx\n\r");
+//    }
+//
+//#ifdef TX
+//    CC1200[9] = Tx_Pkt_size; // Tx Pkt Size
+//   	CC1200[0] = 2; // Enable Tx
+//	MEM[0] = 1;		// send data from FIFO
+//#endif
 #ifdef RX
-    CC1200[12] = Cor_Thre; // Rx Pkt Size
-    CC1200[10] = Rx_Pkt_size + 2; // Rx Pkt Size
-    CC1200[0] = 4; // Enable Rx
+   CC1200[12] = Cor_Thre; // Rx Pkt Size
+   CC1200[10] = Rx_Pkt_size + 2; // Rx Pkt Size
+   CC1200[0] = 4; // Enable Rx
 #endif
 
     xil_printf("GoodBye World\n\r");
