@@ -43,12 +43,16 @@ input        GetDataEn,
 input [11:0] GetData,
 output       Next_data,
 input        TranFrame,
+input        FraimSync,
 input [15:0] TranAdd,
 
 output [11:0] RxData,
 output        RxValid,
+output        RxHeader,
 output [15:0] RxAdd,
 output        RxAddValid,
+output signed [7:0]  CorThre,  //output [7:0]  CorThre,
+
 
 output FrameSync,
 output LineSync,
@@ -62,7 +66,8 @@ input  MISO,
 output CS_n
     );
 
-wire [31:0] RegVsync  = 32'h930b51de;
+wire [31:0] RegVsync0  = 32'h93aaaade;
+wire [31:0] RegVsync1  = 32'h935555de;
 wire [31:0] RegHsync  = 32'h6cf4ae21;
 
 
@@ -77,8 +82,7 @@ wire        Receive      ; // output Receive
 wire [7:0]  Tx_Pkt_size  ; // output [7:0] Tx_Pkt_size,
 wire [7:0]  Rx_Pkt_size  ; // output [7:0] Rx_Pkt_size,
 wire [15:0] Tx_wait      ; // output [15:0] Tx_wait,
-wire signed [7:0]  CorThre      ; //output [7:0]  CorThre,
-
+wire  signed [7:0] RFpow ; // input  signed [7:0] RFpow,
 CC1200SPI_Regs CC1200SPI_Regs_inst(
 .clk(APBclk),
 .rstn(APBrstn),
@@ -105,6 +109,8 @@ CC1200SPI_Regs CC1200SPI_Regs_inst(
 .Rx_Pkt_size(Rx_Pkt_size),   // output [7:0] Rx_Pkt_size,
 .Tx_wait    (Tx_wait    ),   // output [15:0] Tx_wait,
 .CorThre    (CorThre    ),  //output [7:0]  CorThre,
+.RFpow      (RFpow      ), // input  signed [7:0] RFpow,
+
 
 .Trans     (Trans     ),     // output Trans
 .Receive   (Receive   ) // output Receive
@@ -149,8 +155,8 @@ always @(posedge clk or negedge rstn)
     if (!rstn) FramCorCount <= 8'h00;
      else if (Rx_SPI_count == 3'b000) FramCorCount <= 8'h00;
      else if (Rx_SPI_count == 3'b111) FramCorCount <= 8'h00;
-     else if ((!DelSCLK && SCLK) && (MISO == RegVsync[CorCount])) FramCorCount <= FramCorCount + 1;
-     else if ((!DelSCLK && SCLK) && (MISO != RegVsync[CorCount])) FramCorCount <= FramCorCount - 1;
+     else if ((!DelSCLK && SCLK) && (MISO == RegVsync0[CorCount])) FramCorCount <= FramCorCount + 1;
+     else if ((!DelSCLK && SCLK) && (MISO != RegVsync0[CorCount])) FramCorCount <= FramCorCount - 1;
 reg signed [7:0] LineCorCount;
 always @(posedge clk or negedge rstn)
     if (!rstn) LineCorCount <= 8'h00;
@@ -242,7 +248,8 @@ always @(posedge clk or negedge rstn)
      else if (TxSPIdatactrl == 2'b11) TxSPIdatactrl <= 2'b00;
      else if (Load_Next) TxSPIdatactrl <= TxSPIdatactrl + 1;
 
-wire [31:0] HeadTran = (TranFrame) ? RegVsync : RegHsync;
+wire [31:0] HeadTran = (TranFrame &&  FraimSync) ? RegVsync0 : 
+                       (TranFrame && ~FraimSync) ? RegVsync1 : RegHsync;
      
 reg [11:0] TxSavePreData;
 always @(posedge clk or negedge rstn) 
@@ -290,9 +297,17 @@ always @(posedge clk or negedge rstn)
     if (!rstn) Rx_SPI_count <= 3'b000;
      else if (!ReadRxFIFO) Rx_SPI_count <= 3'b000;
      else if (Rx_SPI_count == 3'b111) Rx_SPI_count <= 3'b111;
-     else if (negRxPkt) Rx_SPI_count <=3'b001;  
+//     else if (negRxPkt) Rx_SPI_count <=3'b001;  
      else if (Load_Next) Rx_SPI_count <= Rx_SPI_count + 1;  
 
+reg Reg_RxHeader;
+always @(posedge clk or negedge rstn)
+    if (!rstn) Reg_RxHeader <= 1'b0;
+     else if (!ReadRxFIFO) Reg_RxHeader <= 1'b0;
+     else if (Load_Next &&(Rx_SPI_count == 3'b000)) Reg_RxHeader <= 1'b1;
+     else if (Load_Next &&(Rx_SPI_count == 3'b110)) Reg_RxHeader <= 1'b0;
+assign RxHeader = Reg_RxHeader;
+     
 reg [1:0] RxSPIdatactrl;
 always @(posedge clk or negedge rstn) 
     if (!rstn) RxSPIdatactrl <= 2'b00;
@@ -302,8 +317,14 @@ always @(posedge clk or negedge rstn)
 
 reg [7:0] RxSavePreData;
 always @(posedge clk or negedge rstn) 
-    if (!rstn) RxSavePreData <= 12'h000;
+    if (!rstn) RxSavePreData <= 8'h00;
      else if (Load_Next) RxSavePreData <= SPIDataIn;
+
+reg signed [7:0] Reg_RFpow ; // input  signed [7:0] RFpow,
+always @(posedge clk or negedge rstn) 
+    if (!rstn) Reg_RFpow <= 8'h00;
+     else if (Load_Next) Reg_RFpow <= RxSavePreData;
+assign RFpow = Reg_RFpow;
 
 assign RxData = (!ReadRxCounter) ? 8'h00                             :
                 (RxSPIdatactrl == 2'b00)   ? 12'h000                    :

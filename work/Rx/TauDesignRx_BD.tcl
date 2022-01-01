@@ -40,7 +40,7 @@ if { [string first $scripts_vivado_version $current_vivado_version] == -1 } {
 
 # The design that will be created by this Tcl script contains the following 
 # module references:
-# CC1200SPI_Top, RxHDMI, RxMem, RxSyncPic
+# CC1200SPI_Top, RxHDMI, RxMem
 
 # Please add the sources of those modules before sourcing this Tcl script.
 
@@ -163,7 +163,6 @@ if { $bCheckModules == 1 } {
 CC1200SPI_Top\
 RxHDMI\
 RxMem\
-RxSyncPic\
 "
 
    set list_mods_missing ""
@@ -281,17 +280,6 @@ proc create_root_design { parentCell } {
      return 1
    }
   
-  # Create instance: RxSyncPic_0, and set properties
-  set block_name RxSyncPic
-  set block_cell_name RxSyncPic_0
-  if { [catch {set RxSyncPic_0 [create_bd_cell -type module -reference $block_name $block_cell_name] } errmsg] } {
-     catch {common::send_msg_id "BD_TCL-105" "ERROR" "Unable to add referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   } elseif { $RxSyncPic_0 eq "" } {
-     catch {common::send_msg_id "BD_TCL-106" "ERROR" "Unable to referenced block <$block_name>. Please add the files for ${block_name}'s definition into the project."}
-     return 1
-   }
-  
   # Create instance: axi_apb_bridge_0, and set properties
   set axi_apb_bridge_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:axi_apb_bridge:3.0 axi_apb_bridge_0 ]
   set_property -dict [ list \
@@ -320,8 +308,10 @@ proc create_root_design { parentCell } {
    CONFIG.C_DATA_DEPTH {16384} \
    CONFIG.C_ENABLE_ILA_AXI_MON {false} \
    CONFIG.C_MONITOR_TYPE {Native} \
-   CONFIG.C_NUM_OF_PROBES {10} \
+   CONFIG.C_NUM_OF_PROBES {14} \
    CONFIG.C_PROBE0_WIDTH {12} \
+   CONFIG.C_PROBE10_WIDTH {32} \
+   CONFIG.C_PROBE11_WIDTH {32} \
    CONFIG.C_PROBE6_WIDTH {1} \
    CONFIG.C_PROBE7_WIDTH {1} \
    CONFIG.C_PROBE8_WIDTH {16} \
@@ -758,27 +748,33 @@ proc create_root_design { parentCell } {
   connect_bd_net -net CC1200SPI_Top_0_APB_S_0_prdata [get_bd_pins CC1200SPI_Top_0/APB_S_0_prdata] [get_bd_pins axi_apb_bridge_0/m_apb_prdata]
   connect_bd_net -net CC1200SPI_Top_0_APB_S_0_pready [get_bd_pins CC1200SPI_Top_0/APB_S_0_pready] [get_bd_pins axi_apb_bridge_0/m_apb_pready]
   connect_bd_net -net CC1200SPI_Top_0_APB_S_0_pslverr [get_bd_pins CC1200SPI_Top_0/APB_S_0_pslverr] [get_bd_pins axi_apb_bridge_0/m_apb_pslverr]
-  connect_bd_net -net CC1200SPI_Top_0_CS_n [get_bd_ports CS_n_1] [get_bd_pins CC1200SPI_Top_0/CS_n] [get_bd_pins ila_0/probe5]
-  connect_bd_net -net CC1200SPI_Top_0_FrameSync [get_bd_pins CC1200SPI_Top_0/FrameSync] [get_bd_pins RxMem_0/FraimSync] [get_bd_pins ila_0/probe6]
+  connect_bd_net -net CC1200SPI_Top_0_CS_n [get_bd_ports CS_n_1] [get_bd_pins CC1200SPI_Top_0/CS_n] [get_bd_pins RxMem_0/CS_n] [get_bd_pins ila_0/probe5]
+  connect_bd_net -net CC1200SPI_Top_0_CorThre [get_bd_pins CC1200SPI_Top_0/CorThre] [get_bd_pins RxMem_0/CorThre]
   connect_bd_net -net CC1200SPI_Top_0_GPIO_Out [get_bd_ports GPIO_Out_0] [get_bd_pins CC1200SPI_Top_0/GPIO_Out]
   connect_bd_net -net CC1200SPI_Top_0_GPIO_OutEn [get_bd_ports GPIO_OutEn_0] [get_bd_pins CC1200SPI_Top_0/GPIO_OutEn]
-  connect_bd_net -net CC1200SPI_Top_0_LineSync [get_bd_pins CC1200SPI_Top_0/LineSync] [get_bd_pins RxMem_0/LineSync] [get_bd_pins ila_0/probe7]
-  connect_bd_net -net CC1200SPI_Top_0_MOSI [get_bd_ports MOSI_1] [get_bd_pins CC1200SPI_Top_0/MOSI] [get_bd_pins ila_0/probe3]
+  connect_bd_net -net CC1200SPI_Top_0_MOSI [get_bd_ports MOSI_1] [get_bd_pins CC1200SPI_Top_0/MOSI] [get_bd_pins RxMem_0/MOSI] [get_bd_pins ila_0/probe3]
   connect_bd_net -net CC1200SPI_Top_0_RxAdd [get_bd_pins CC1200SPI_Top_0/RxAdd] [get_bd_pins RxMem_0/RxAdd]
   connect_bd_net -net CC1200SPI_Top_0_RxAddValid [get_bd_pins CC1200SPI_Top_0/RxAddValid] [get_bd_pins RxMem_0/RxAddValid]
   connect_bd_net -net CC1200SPI_Top_0_RxData [get_bd_pins CC1200SPI_Top_0/RxData] [get_bd_pins RxMem_0/RxData] [get_bd_pins ila_0/probe0]
+  connect_bd_net -net CC1200SPI_Top_0_RxHeader [get_bd_pins CC1200SPI_Top_0/RxHeader] [get_bd_pins RxMem_0/RxHeader]
   connect_bd_net -net CC1200SPI_Top_0_RxValid [get_bd_pins CC1200SPI_Top_0/RxValid] [get_bd_pins RxMem_0/RxValid] [get_bd_pins ila_0/probe1]
-  connect_bd_net -net CC1200SPI_Top_0_SCLK [get_bd_ports SCLK_1] [get_bd_pins CC1200SPI_Top_0/SCLK] [get_bd_pins ila_0/probe2]
+  connect_bd_net -net CC1200SPI_Top_0_SCLK [get_bd_ports SCLK_1] [get_bd_pins CC1200SPI_Top_0/SCLK] [get_bd_pins RxMem_0/SCLK] [get_bd_pins ila_0/probe2]
   connect_bd_net -net CC1200SPI_Top_0_ShiftMISO [get_bd_pins CC1200SPI_Top_0/ShiftMISO] [get_bd_pins ila_0/probe9]
   connect_bd_net -net GPIO_In_0_1 [get_bd_ports GPIO_In_0] [get_bd_pins CC1200SPI_Top_0/GPIO_In]
-  connect_bd_net -net MISO_1_1 [get_bd_ports MISO_1] [get_bd_pins CC1200SPI_Top_0/MISO] [get_bd_pins ila_0/probe4]
-  connect_bd_net -net RxHDMI_0_Mem_Read [get_bd_pins RxHDMI_0/Mem_Read] [get_bd_pins RxMem_0/HMemRead] [get_bd_pins RxSyncPic_0/HMemRead]
+  connect_bd_net -net MISO_1_1 [get_bd_ports MISO_1] [get_bd_pins CC1200SPI_Top_0/MISO] [get_bd_pins RxMem_0/MISO] [get_bd_pins ila_0/probe4]
+  connect_bd_net -net RxHDMI_0_Mem_Read [get_bd_pins RxHDMI_0/Mem_Read] [get_bd_pins RxMem_0/HMemRead]
   connect_bd_net -net RxHDMI_0_Out_pData [get_bd_pins RxHDMI_0/Out_pData] [get_bd_pins rgb2dvi_0/vid_pData]
   connect_bd_net -net RxHDMI_0_Out_pHSync [get_bd_pins RxHDMI_0/Out_pHSync] [get_bd_pins rgb2dvi_0/vid_pVSync]
-  connect_bd_net -net RxHDMI_0_Out_pVDE [get_bd_pins RxHDMI_0/Out_pVDE] [get_bd_pins RxMem_0/pVDE] [get_bd_pins RxSyncPic_0/pVDE] [get_bd_pins rgb2dvi_0/vid_pVDE]
-  connect_bd_net -net RxHDMI_0_Out_pVSync [get_bd_pins RxHDMI_0/Out_pVSync] [get_bd_pins RxMem_0/HVsync] [get_bd_pins RxSyncPic_0/HVsync] [get_bd_pins rgb2dvi_0/vid_pHSync]
+  connect_bd_net -net RxHDMI_0_Out_pVDE [get_bd_pins RxHDMI_0/Out_pVDE] [get_bd_pins RxMem_0/pVDE] [get_bd_pins rgb2dvi_0/vid_pVDE]
+  connect_bd_net -net RxHDMI_0_Out_pVSync [get_bd_pins RxHDMI_0/Out_pVSync] [get_bd_pins RxMem_0/HVsync] [get_bd_pins rgb2dvi_0/vid_pHSync]
   connect_bd_net -net RxMem_0_DEWMadd [get_bd_pins RxMem_0/DEWMadd] [get_bd_pins ila_0/probe8]
+  connect_bd_net -net RxMem_0_Deb_CS_Off [get_bd_pins RxMem_0/Deb_CS_Off] [get_bd_pins ila_0/probe11]
+  connect_bd_net -net RxMem_0_Deb_CS_On [get_bd_pins RxMem_0/Deb_CS_On] [get_bd_pins ila_0/probe10]
+  connect_bd_net -net RxMem_0_FraimSync [get_bd_pins RxHDMI_0/FraimSync] [get_bd_pins RxMem_0/FraimSync] [get_bd_pins ila_0/probe6]
+  connect_bd_net -net RxMem_0_FrameSync0 [get_bd_pins RxMem_0/FrameSync0] [get_bd_pins ila_0/probe12]
+  connect_bd_net -net RxMem_0_FrameSync1 [get_bd_pins RxMem_0/FrameSync1] [get_bd_pins ila_0/probe13]
   connect_bd_net -net RxMem_0_HDMIdata [get_bd_pins RxHDMI_0/Mem_Data] [get_bd_pins RxMem_0/HDMIdata]
+  connect_bd_net -net RxMem_0_LineSync [get_bd_pins RxMem_0/LineSync] [get_bd_pins ila_0/probe7]
   connect_bd_net -net RxSyncPic_0_PixelClk [get_bd_pins RxHDMI_0/clk] [get_bd_pins RxMem_0/PixelClk] [get_bd_pins rgb2dvi_0/PixelClk]
   connect_bd_net -net axi_apb_bridge_0_m_apb_paddr [get_bd_pins CC1200SPI_Top_0/APB_S_0_paddr] [get_bd_pins axi_apb_bridge_0/m_apb_paddr]
   connect_bd_net -net axi_apb_bridge_0_m_apb_penable [get_bd_pins CC1200SPI_Top_0/APB_S_0_penable] [get_bd_pins axi_apb_bridge_0/m_apb_penable]
@@ -786,10 +782,10 @@ proc create_root_design { parentCell } {
   connect_bd_net -net axi_apb_bridge_0_m_apb_pwdata [get_bd_pins CC1200SPI_Top_0/APB_S_0_pwdata] [get_bd_pins axi_apb_bridge_0/m_apb_pwdata]
   connect_bd_net -net axi_apb_bridge_0_m_apb_pwrite [get_bd_pins CC1200SPI_Top_0/APB_S_0_pwrite] [get_bd_pins axi_apb_bridge_0/m_apb_pwrite]
   connect_bd_net -net clk_wiz_0_clk_out1 [get_bd_pins CC1200SPI_Top_0/APBclk] [get_bd_pins axi_apb_bridge_0/s_axi_aclk] [get_bd_pins clk_wiz_0/clk_out1] [get_bd_pins processing_system7_0/M_AXI_GP0_ACLK] [get_bd_pins ps7_0_axi_periph/ACLK] [get_bd_pins ps7_0_axi_periph/M00_ACLK] [get_bd_pins ps7_0_axi_periph/S00_ACLK] [get_bd_pins rst_clk_wiz_0_50M/slowest_sync_clk]
-  connect_bd_net -net clk_wiz_0_clk_out2 [get_bd_pins CC1200SPI_Top_0/clk] [get_bd_pins RxMem_0/Cclk] [get_bd_pins RxSyncPic_0/clk] [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins ila_0/clk] [get_bd_pins proc_sys_reset_0/slowest_sync_clk] [get_bd_pins rgb2dvi_0/SerialClk]
+  connect_bd_net -net clk_wiz_0_clk_out2 [get_bd_pins CC1200SPI_Top_0/clk] [get_bd_pins RxMem_0/Cclk] [get_bd_pins clk_wiz_0/clk_out2] [get_bd_pins ila_0/clk] [get_bd_pins proc_sys_reset_0/slowest_sync_clk] [get_bd_pins rgb2dvi_0/SerialClk]
   connect_bd_net -net clk_wiz_0_locked [get_bd_pins clk_wiz_0/locked] [get_bd_pins proc_sys_reset_0/dcm_locked] [get_bd_pins rst_clk_wiz_0_50M/dcm_locked]
   connect_bd_net -net ext_reset_in_0_1 [get_bd_ports ext_reset_in] [get_bd_pins proc_sys_reset_0/ext_reset_in] [get_bd_pins rst_clk_wiz_0_50M/ext_reset_in]
-  connect_bd_net -net proc_sys_reset_0_peripheral_aresetn [get_bd_pins CC1200SPI_Top_0/rstn] [get_bd_pins RxHDMI_0/rstn] [get_bd_pins RxMem_0/rstn] [get_bd_pins RxSyncPic_0/rstn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn] [get_bd_pins rgb2dvi_0/aRst_n]
+  connect_bd_net -net proc_sys_reset_0_peripheral_aresetn [get_bd_pins CC1200SPI_Top_0/rstn] [get_bd_pins RxHDMI_0/rstn] [get_bd_pins RxMem_0/rstn] [get_bd_pins proc_sys_reset_0/peripheral_aresetn] [get_bd_pins rgb2dvi_0/aRst_n]
   connect_bd_net -net rgb2dvi_0_TMDS_Clk_n [get_bd_ports TMDS_Clk_n_0] [get_bd_pins rgb2dvi_0/TMDS_Clk_n]
   connect_bd_net -net rgb2dvi_0_TMDS_Clk_p [get_bd_ports TMDS_Clk_p_0] [get_bd_pins rgb2dvi_0/TMDS_Clk_p]
   connect_bd_net -net rgb2dvi_0_TMDS_Data_n [get_bd_ports TMDS_Data_n_0] [get_bd_pins rgb2dvi_0/TMDS_Data_n]
@@ -797,7 +793,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net rst_clk_wiz_0_50M_interconnect_aresetn [get_bd_pins ps7_0_axi_periph/ARESETN] [get_bd_pins rst_clk_wiz_0_50M/interconnect_aresetn]
   connect_bd_net -net rst_clk_wiz_0_50M_peripheral_aresetn [get_bd_pins CC1200SPI_Top_0/APBrstn] [get_bd_pins axi_apb_bridge_0/s_axi_aresetn] [get_bd_pins ps7_0_axi_periph/M00_ARESETN] [get_bd_pins ps7_0_axi_periph/S00_ARESETN] [get_bd_pins rst_clk_wiz_0_50M/peripheral_aresetn]
   connect_bd_net -net sysclk_1 [get_bd_ports sysclk] [get_bd_pins clk_wiz_0/clk_in1]
-  connect_bd_net -net xlconstant_0_dout [get_bd_pins CC1200SPI_Top_0/GetDataEn] [get_bd_pins CC1200SPI_Top_0/TranFrame] [get_bd_pins xlconstant_0/dout]
+  connect_bd_net -net xlconstant_0_dout [get_bd_pins CC1200SPI_Top_0/FraimSync] [get_bd_pins CC1200SPI_Top_0/GetDataEn] [get_bd_pins CC1200SPI_Top_0/TranFrame] [get_bd_pins xlconstant_0/dout]
   connect_bd_net -net xlconstant_2_dout [get_bd_pins CC1200SPI_Top_0/TranAdd] [get_bd_pins xlconstant_2/dout]
   connect_bd_net -net xlconstant_3_dout [get_bd_pins CC1200SPI_Top_0/GetData] [get_bd_pins xlconstant_3/dout]
 

@@ -82,22 +82,24 @@ always @(posedge Cclk or negedge rstn)
     if (!rstn) DelYData <= 5'h00;
      else if (s_axis_video_tvalid) DelYData <= YData;     
 
-reg Valid_odd;
-always @(posedge Cclk or negedge rstn)
-    if (!rstn) Valid_odd <= 1'b0;
-     else if (s_axis_video_tuser && s_axis_video_tvalid)  Valid_odd <=  ~Valid_odd;
-     else if (Del_Last)  Valid_odd <=  Valid_odd;
-     else if (s_axis_video_tvalid) Valid_odd <= ~Valid_odd;
 
 reg Reg_FraimSync;
 always @(posedge Cclk or negedge rstn) 
     if (!rstn) Reg_FraimSync <= 1'b0;
      else if (FraimSel == 2'b11) Reg_FraimSync <= 1'b1;
      else if (FraimSel == 2'b10) Reg_FraimSync <= 1'b0;
-     else if (s_axis_video_tuser && s_axis_video_tvalid && Valid_odd) Reg_FraimSync <= 1'b1;
-     else if (s_axis_video_tuser && s_axis_video_tvalid && ~Valid_odd) Reg_FraimSync <= 1'b0;
+//     else if (s_axis_video_tuser && s_axis_video_tvalid && Valid_odd) Reg_FraimSync <= 1'b1;
+//     else if (s_axis_video_tuser && s_axis_video_tvalid && ~Valid_odd) Reg_FraimSync <= 1'b0;
+     else if (s_axis_video_tuser && s_axis_video_tvalid && !TranEn) Reg_FraimSync <= ~Reg_FraimSync;
 assign FraimSync = Reg_FraimSync;
 
+reg Valid_odd;
+always @(posedge Cclk or negedge rstn)
+    if (!rstn) Valid_odd <= 1'b0;
+     else if (s_axis_video_tuser && s_axis_video_tvalid)  Valid_odd <=  Reg_FraimSync;
+     else if (Del_Last)  Valid_odd <=  Valid_odd;
+     else if (s_axis_video_tvalid) Valid_odd <= ~Valid_odd;
+     
 always @(posedge Cclk or negedge rstn)
     if (!rstn) CWadd <= 20'h00000;
      else if (s_axis_video_tvalid && s_axis_video_tuser && s_axis_video_tready) CWadd <= 20'h00000;

@@ -29,7 +29,7 @@ output        Out_pVSync,
 output        Out_pHSync,
 output        Out_pVDE  ,
 
-//input         FraimSync,
+input         FraimSync,
 output        Mem_Read,
 input  [23:0] Mem_Data,
 
@@ -106,7 +106,8 @@ always @(posedge clk or negedge rstn)
 reg Line_odd;
 always @(posedge clk or negedge rstn)
     if (!rstn) Line_odd <= 1'b0;
-     else if (Vsync_counter == 32'h00000000) Line_odd <= Reg_FraimSync;    
+//     else if (Vsync_counter == 32'h00000000) Line_odd <= Reg_FraimSync;    
+     else if (Vsync_counter == 32'h00000000) Line_odd <= FraimSync;    
      else if ((Hsync_counter == 16'd783) && activeData) Line_odd <= ~Line_odd;    
      
 wire [23:0] Inc_Mem_Data;

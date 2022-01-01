@@ -46,6 +46,7 @@ output [7:0] Tx_Pkt_size,
 output [7:0] Rx_Pkt_size,
 output [15:0] Tx_wait,
 output [7:0]  CorThre,
+input  signed [7:0] RFpow,
 
 output Trans,
 output Receive
@@ -129,6 +130,7 @@ assign APB_S_0_prdata = (APB_S_0_paddr[7:0] == 8'h00) ? {29'h00000000,RegReceive
                         (APB_S_0_paddr[7:0] == 8'h28) ? {24'h000000,Reg_Rx_Pkt_size}     : 
                         (APB_S_0_paddr[7:0] == 8'h2c) ? {16'h0000,Reg_Tx_wait}           : 
                         (APB_S_0_paddr[7:0] == 8'h30) ? {24'h000000,Reg_CorThre}         : 
+                        (APB_S_0_paddr[7:0] == 8'h34) ? {{24{RFpow[7]}},RFpow}           : 
                         32'h00000000;
 
 reg Reg_pready;

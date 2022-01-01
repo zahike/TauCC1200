@@ -52,7 +52,7 @@
 #define START_FREQ   0x100
 #define TX
 //#define RX
-#define Tx_wait 0xffff
+#define Tx_wait 0x0000
 #define Tx_Pkt_size 126
 #define Rx_Pkt_size 126
 

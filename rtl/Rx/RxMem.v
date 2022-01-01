@@ -24,74 +24,129 @@ module RxMem(
 input Cclk,
 input rstn,
 
-input FraimSync,
-input LineSync,
+//input FraimSync,
+//input LineSync,
 
 input [11:0] RxData,
 input        RxValid,
+input        RxHeader,
 input [15:0] RxAdd,
 input        RxAddValid,
+input signed [7:0]  CorThre,  //input [7:0]  CorThre,
 
 output PixelClk,
 
-//input  [3:0] SCLK,
-//input  [3:0] MOSI,
-//output [3:0] MISO,
-//input  [3:0] CS_n,
-
 output [15:0] DEWMadd,
 
+output wire FrameSync0,
+output wire FrameSync1,
+output wire LineSync  ,
+
+output [31:0] Deb_CS_On,
+output [31:0] Deb_CS_Off,
+
+input SCLK,
+input MOSI,
+input MISO,
+input CS_n,
+
+output         FraimSync,
 input HVsync  ,
 input HMemRead,
 input pVDE    ,
 output [23:0] HDMIdata
 
     );
-
-wire [3:0] SPIDataValid = 0;
-wire [11:0] SPIData[3:0];
-wire [15:0] SPIDataAdd[3:0];
-/*
-genvar i;
-
-generate 
-for (i=0;i<4;i=i+1) begin
-SPI_Rx SPI_Rx_inst(
-.clk (Cclk ),                    // input clk,
-.rstn(rstn),                   // input rstn,
-
-.SPIDataValid(SPIDataValid[i]),          // output SPIDataValid,
-.SPIData     (SPIData     [i]),               // output [11:0] SPIData,
-.SPIDataAdd  (SPIDataAdd  [i]),            // output [15:0] SPIDataAdd,
-
-.SCLK(SCLK[i]),                  // input  SCLK,
-.MOSI(MOSI[i]),                  // input  MOSI,
-.MISO(MISO[i]),                  // output MISO,
-.CS_n(CS_n[i])                   // input  CS_n
-    );
-end
-endgenerate
-*/
-reg DelLineSync;
-always @(posedge Cclk or negedge rstn) 
-    if (!rstn) DelLineSync <= 1'b0;
-    else DelLineSync <= LineSync;
+wire [31:0] RegVsync0 = 32'h93aaaade;
+wire [31:0] RegVsync1 = 32'h935555de;
+wire [31:0] RegHsync  = 32'h6cf4ae21;
     
+///////////////////// SPI test ///////////////////// 
+reg [31:0] Reg_CS_On;
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) Reg_CS_On <= 32'h00000000;
+     else if (CS_n) Reg_CS_On <= 32'h00000000;
+     else Reg_CS_On <= Reg_CS_On + 1;
+assign Deb_CS_On = Reg_CS_On;
+reg [31:0] Reg_CS_Off;
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) Reg_CS_Off <= 32'h00000000;
+     else if (!CS_n) Reg_CS_Off <= 32'h00000000;
+     else Reg_CS_Off <= Reg_CS_Off + 1;
+assign Deb_CS_Off = Reg_CS_Off;
+//reg DelLineSync;
+//always @(posedge Cclk or negedge rstn) 
+//    if (!rstn) DelLineSync <= 1'b0;
+//    else DelLineSync <= LineSync;
+//wire FrameSync0;
+//wire FrameSync1;
+//wire LineSync ;
+reg DelSCLK;
+always @(posedge Cclk or negedge rstn)
+    if (!rstn) DelSCLK <= 1'b0;
+     else DelSCLK <= SCLK;
+
+reg [5:0] CorCount;
+always @(posedge Cclk or negedge rstn)
+    if (!rstn) CorCount <= 6'h2f;
+     else if (!RxHeader) CorCount <= 6'h2f;
+     else if (DelSCLK && !SCLK) CorCount <= CorCount - 1;
+
 reg [15:0] NextLineAdd;
 always @(posedge Cclk or negedge rstn) 
     if (!rstn) NextLineAdd <= 16'h0050;
-     else if (FraimSync) NextLineAdd <= 16'h0050;
+     else if (FrameSync0 || FrameSync1) NextLineAdd <= 16'h0050;
      else if (NextLineAdd == 16'h9600) NextLineAdd <= 16'h9600;
-     else if (DelLineSync && !LineSync) NextLineAdd <= NextLineAdd + 16'h0050;
+     else if (RxAddValid) NextLineAdd <= NextLineAdd + 16'h0050;
+     
+wire [47:0] HeadVsync0 = {RegVsync0,16'h0000};
+wire [47:0] HeadVsync1 = {RegVsync1,16'h0000};
+wire [47:0] HeadHsync  = {RegHsync ,NextLineAdd};
 
+reg signed [7:0] Fram0CorCount;
+always @(posedge Cclk or negedge rstn)
+    if (!rstn) Fram0CorCount <= 8'h00;
+     else if (!RxHeader) Fram0CorCount <= 8'h00;
+     else if ((!DelSCLK && SCLK) && (MISO == HeadVsync0[CorCount])) Fram0CorCount <= Fram0CorCount + 1;
+     else if ((!DelSCLK && SCLK) && (MISO != HeadVsync0[CorCount])) Fram0CorCount <= Fram0CorCount - 1;
+reg signed [7:0] Fram1CorCount;
+always @(posedge Cclk or negedge rstn)
+    if (!rstn) Fram1CorCount <= 8'h00;
+     else if (!RxHeader) Fram1CorCount <= 8'h00;
+     else if ((!DelSCLK && SCLK) && (MISO == HeadVsync1[CorCount])) Fram1CorCount <= Fram1CorCount + 1;
+     else if ((!DelSCLK && SCLK) && (MISO != HeadVsync1[CorCount])) Fram1CorCount <= Fram1CorCount - 1;
+reg signed [7:0] LineCorCount;
+always @(posedge Cclk or negedge rstn)
+    if (!rstn) LineCorCount <= 8'h00;
+     else if (!RxHeader) LineCorCount <= 8'h00;
+     else if ((!DelSCLK && SCLK) && (MISO == HeadHsync[CorCount])) LineCorCount <= LineCorCount + 1;
+     else if ((!DelSCLK && SCLK) && (MISO != HeadHsync[CorCount])) LineCorCount <= LineCorCount - 1;
+
+assign FrameSync0 = (Fram0CorCount > CorThre) ? 1'b1 : 1'b0;
+assign FrameSync1 = (Fram1CorCount > CorThre) ? 1'b1 : 1'b0;
+assign LineSync   = (LineCorCount  > CorThre) ? 1'b1 : 1'b0;
+
+reg Reg_FraimSync;
+always @(posedge Cclk or negedge rstn)  
+    if (!rstn) Reg_FraimSync <= 1'b0;
+     else if (RxAdd && FrameSync0) Reg_FraimSync <= 1'b0;
+     else if (RxAdd && FrameSync1) Reg_FraimSync <= 1'b1;
+assign FraimSync = Reg_FraimSync;
+
+     
+////////////////// End Of SPI test ////////////////// 
+wire [3:0] SPIDataValid = 0;
+wire [11:0] SPIData[3:0];
+wire [15:0] SPIDataAdd[3:0];
+    
 reg [15:0] WMadd;
 always @(posedge Cclk or negedge rstn) 
     if (!rstn) WMadd <= 16'h0000;
-     else if (FraimSync) WMadd <= 16'h0000; 
+     else if (FrameSync0 || FrameSync1) WMadd <= 16'h0000; 
      else if (WMadd == 16'h9600) WMadd <= 16'h9600;
      else if (RxValid)   WMadd <= WMadd + 1;
+//     else if (RxAddValid)  WMadd <= NextLineAdd; 
      else if (RxAddValid)  WMadd <= RxAdd; 
-//     else if (LineSync)  WMadd <= NextLineAdd; 
 
 assign DEWMadd = WMadd;
      

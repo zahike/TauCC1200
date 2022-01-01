@@ -71,6 +71,7 @@ int main()
 {
 	int loop;
 	int data;
+	int busy;
 
     init_platform();
 
@@ -118,6 +119,9 @@ int main()
 	{
 		loop = CC1200[1];
 	};
+	    CC1200[12] = Cor_Thre; // Rx Pkt Size
+	    CC1200[10] = Rx_Pkt_size + 2; // Rx Pkt Size
+	    CC1200[0] = 4; // Enable Rx
 
 //    CC1200[2] = 0x3d0000;  // check if module in Tx
 //    data = 0;
@@ -146,12 +150,20 @@ int main()
 //   	CC1200[0] = 2; // Enable Tx
 //	MEM[0] = 1;		// send data from FIFO
 //#endif
-#ifdef RX
-   CC1200[12] = Cor_Thre; // Rx Pkt Size
-   CC1200[10] = Rx_Pkt_size + 2; // Rx Pkt Size
-   CC1200[0] = 4; // Enable Rx
-#endif
-
+//#ifdef RX
+//    CC1200[12] = Cor_Thre; // Rx Pkt Size
+//    CC1200[10] = Rx_Pkt_size + 2; // Rx Pkt Size
+//    CC1200[0] = 4; // Enable Rx
+//#endif
+while (1){
+	busy = 1;
+	while (busy == 1){
+		busy = CC1200[1];
+	}
+	data = CC1200[13];
+	xil_printf("RF = %d\t",data);
+	sleep (1);
+}
     xil_printf("GoodBye World\n\r");
 
     cleanup_platform();

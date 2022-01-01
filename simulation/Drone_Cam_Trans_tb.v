@@ -235,7 +235,8 @@ end
     .GetDataEn(TranEn),                // input wire GetDataEn;
     .GetData(TranData),                    // input wire [11 : 0] GetData;
     .Next_data(NextData),                // output wire Next_data;
-    .TranFrame(TranFrame),               // output TranFrame      
+    .TranFrame(TranFrame),               // output TranFrame     
+    .FraimSync(TxFraimSync),              // input        FraimSync, 
     .TranAdd (TranAdd),                  // output [15:0] TranAdd,  
     .RxData(RxData),                      // output wire [11 : 0] RxData;
     .RxValid(RxValid),                    // output wire RxValid;
