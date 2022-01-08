@@ -69,18 +69,45 @@ always @(posedge Cclk or negedge rstn)
      else Reg_CS_On <= Reg_CS_On + 1;
 assign Deb_CS_On = Reg_CS_On;
 reg [31:0] Reg_CS_Off;
+//always @(posedge Cclk or negedge rstn) 
+//    if (!rstn) Reg_CS_Off <= 32'h00000000;
+//     else if (!CS_n) Reg_CS_Off <= 32'h00000000;
+//     else Reg_CS_Off <= Reg_CS_Off + 1;
 always @(posedge Cclk or negedge rstn) 
     if (!rstn) Reg_CS_Off <= 32'h00000000;
-     else if (!CS_n) Reg_CS_Off <= 32'h00000000;
+     else if (FrameSync0 || FrameSync1) Reg_CS_Off <= 32'h00000000;
      else Reg_CS_Off <= Reg_CS_Off + 1;
 assign Deb_CS_Off = Reg_CS_Off;
-//reg DelLineSync;
-//always @(posedge Cclk or negedge rstn) 
-//    if (!rstn) DelLineSync <= 1'b0;
-//    else DelLineSync <= LineSync;
-//wire FrameSync0;
-//wire FrameSync1;
-//wire LineSync ;
+reg [31:0] mainWD;
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) mainWD <= 32'h00000000;
+     else if (!CS_n) mainWD <= 32'h00000000;
+     else if (mainWD == 32'h04408000) mainWD <= 32'h04408000;
+     else mainWD <= mainWD + 1;
+
+reg ZeroPadOn;
+reg [7:0] ZeroPadCount;
+reg [15:0] NextLineAdd;
+reg [19:0] Reg_Pck_WD_count;
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) Reg_Pck_WD_count <= 20'h00000;
+     else if (!CS_n) Reg_Pck_WD_count <= 20'h00000;
+     else if (ZeroPadCount == 8'h50) Reg_Pck_WD_count <= 20'h00000;
+     else if (NextLineAdd == 16'h9600) Reg_Pck_WD_count <= 20'h00000;
+     else if (Reg_Pck_WD_count == 20'h23500) Reg_Pck_WD_count <= 20'h23500;
+     else Reg_Pck_WD_count <= Reg_Pck_WD_count + 1;
+
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) ZeroPadOn <= 1'b0;
+     else if (Reg_Pck_WD_count == 20'h234ff) ZeroPadOn <= 1'b1;
+     else if (ZeroPadCount == 8'h4f) ZeroPadOn <= 1'b0;
+     
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) ZeroPadCount <= 8'h00;
+     else if (!ZeroPadOn) ZeroPadCount <= 8'h00; 
+     else ZeroPadCount <= ZeroPadCount + 1; 
+
+    
 reg DelSCLK;
 always @(posedge Cclk or negedge rstn)
     if (!rstn) DelSCLK <= 1'b0;
@@ -92,12 +119,12 @@ always @(posedge Cclk or negedge rstn)
      else if (!RxHeader) CorCount <= 6'h2f;
      else if (DelSCLK && !SCLK) CorCount <= CorCount - 1;
 
-reg [15:0] NextLineAdd;
 always @(posedge Cclk or negedge rstn) 
     if (!rstn) NextLineAdd <= 16'h0050;
      else if (FrameSync0 || FrameSync1) NextLineAdd <= 16'h0050;
      else if (NextLineAdd == 16'h9600) NextLineAdd <= 16'h9600;
-     else if (RxAddValid) NextLineAdd <= NextLineAdd + 16'h0050;
+     else if (RxAddValid) NextLineAdd <= RxAdd + 16'h0050;
+     else if (Reg_Pck_WD_count == 20'h234ff) NextLineAdd <= NextLineAdd + 16'h0050;
      
 wire [47:0] HeadVsync0 = {RegVsync0,16'h0000};
 wire [47:0] HeadVsync1 = {RegVsync1,16'h0000};
@@ -145,18 +172,23 @@ always @(posedge Cclk or negedge rstn)
      else if (FrameSync0 || FrameSync1) WMadd <= 16'h0000; 
      else if (WMadd == 16'h9600) WMadd <= 16'h9600;
      else if (RxValid)   WMadd <= WMadd + 1;
-//     else if (RxAddValid)  WMadd <= NextLineAdd; 
+     else if (ZeroPadOn)   WMadd <= WMadd + 1;
      else if (RxAddValid)  WMadd <= RxAdd; 
+     else if (Reg_Pck_WD_count == 20'h234ff)  WMadd <= NextLineAdd; 
 
 assign DEWMadd = WMadd;
-     
+
+wire        WriteMemEn   = (ZeroPadOn) ? ZeroPadOn : RxValid;    
+wire [11:0] WriteMemData = (ZeroPadOn) ?   12'h000 : RxData;    
+
 reg [11:0] YMem0 [0:38399]; // 95ff
 reg [11:0] YMem1 [0:38399]; // 95ff
 reg [11:0] YMem2 [0:38399]; // 95ff
 reg [11:0] YMem3 [0:38399]; // 95ff
 always @(posedge Cclk)
 //    if (SPIDataValid[0]) YMem0[SPIDataAdd[0]] <= SPIData[0];
-    if (RxValid) YMem0[WMadd] <= RxData;
+//    if (RxValid) YMem0[WMadd] <= RxData;
+    if (WriteMemEn) YMem0[WMadd] <= WriteMemData;
 //always @(posedge Cclk)                 
 //    if (SPIDataValid[1]) YMem1[SPIDataAdd[1]] <= SPIData[1];
 //always @(posedge Cclk)                
@@ -164,6 +196,23 @@ always @(posedge Cclk)
 //always @(posedge Cclk)                 
 //    if (SPIDataValid[3]) YMem3[SPIDataAdd[3]] <= SPIData[3];
 
+//input [15:0] RxAdd,
+//input        RxAddValid,
+wire [9:0] GotPktNum = (RxAdd[15:4]/5);
+reg [639:0] Reg_Getpkt;
+wire [15:0] CheckAdd[0:639];
+genvar i;
+generate 
+for (i=0;i<640;i=i+1) begin 
+assign CheckAdd[i] = 16'h0005 + (8'h50*i);
+    always @(posedge Cclk or negedge rstn) 
+        if (!rstn) Reg_Getpkt[i] <= 1'b0;
+         else if (!WMadd) Reg_Getpkt[i] <= 1'b0;
+         else if (mainWD == 32'h04408000) Reg_Getpkt[i] <= 1'b0;
+         else if (  !CS_n   && (WMadd == CheckAdd[i])) Reg_Getpkt[i] <= 1'b1;
+         else if (ZeroPadOn && (WMadd == CheckAdd[i])) Reg_Getpkt[i] <= 1'b0;
+end
+endgenerate     
 ///////////////////////////  TRANSFRT DATA TO SCREAN  ///////////////////////////  
 reg [2:0] Cnt_Div_Clk;
 always @(posedge Cclk or negedge rstn)
@@ -188,9 +237,10 @@ always @(posedge Cclk or negedge rstn)
      else if (Cnt_Div_Clk == 3'b011)  Reg_SwReadAdd <= 1'b0;
         
 reg [19:0] HRadd;
-reg [15:0] TRadd;
+//reg [15:0] TRadd;
 
-wire [15:0] readMemAdd = (!Reg_Div_Clk) ? HRadd[19:3] : TRadd;
+//wire [15:0] readMemAdd = (!Reg_Div_Clk) ? HRadd[19:3] : TRadd;
+wire [15:0] readMemAdd = HRadd[19:3];
 
 reg [11:0] Reg_YMem0;
 wire [11:0] Reg_YMem1 = 12'h000;
@@ -209,6 +259,18 @@ always @(posedge Cclk or negedge rstn)
     if (!rstn) HRadd <= 20'h00001;
      else if (!HVsync) HRadd <= 20'h00001;
      else if ((Cnt_Div_Clk == 3'b000) && HMemRead) HRadd <= HRadd + 1;
+
+reg DisRFpktOn;
+always @(posedge Cclk or negedge rstn)
+    if (!rstn) DisRFpktOn <= 1'b0;
+     else if (!HVsync) DisRFpktOn <= 1'b0;
+     else if (HRadd == 20'h4ab01) DisRFpktOn <= 1'b1;
+reg [11:0] DisRFpktAdd; 
+always @(posedge Cclk or negedge rstn)
+    if (!rstn) DisRFpktAdd <= 12'h000;
+     else if (!DisRFpktOn) DisRFpktAdd <= 12'h000;
+     else if ((Cnt_Div_Clk == 3'b000) && HMemRead) DisRFpktAdd <= DisRFpktAdd + 1;
+wire [23:0] DisRFpktData = (Reg_Getpkt[DisRFpktAdd[11:1]]) ? 24'hff0000 : 24'h000000;     
 
 reg Del_HMemRead;
 always @(posedge Cclk or negedge rstn) 
@@ -230,11 +292,10 @@ always @(posedge Cclk or negedge rstn)
                                                  Reg_YMem0[11:8],4'hf,Reg_YMem0[7:4],4'hf,Reg_YMem0[3:0],4'hf
                                                  };
 
-assign  HDMIdata = (REnslant[0]) ? RGB4Pix[23:0] :
+assign  HDMIdata = (DisRFpktOn)  ? DisRFpktData   : 
+                   (REnslant[0]) ? RGB4Pix[23: 0] :
                    (REnslant[1]) ? RGB4Pix[47:24] :
                    (REnslant[2]) ? RGB4Pix[71:48] :
                    (REnslant[3]) ? RGB4Pix[95:72] : 24'h000000;
-  
-
 /////////////////////////// End Of TRANSFRT DATA TO SCREAN  ///////////////////////////  
 endmodule
