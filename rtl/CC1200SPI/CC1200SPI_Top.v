@@ -52,6 +52,7 @@ output        RxHeader,
 output [15:0] RxAdd,
 output        RxAddValid,
 output signed [7:0]  CorThre,  //output [7:0]  CorThre,
+input Out_Off_Link,
 
 
 output FrameSync,
@@ -323,6 +324,7 @@ always @(posedge clk or negedge rstn)
 reg signed [7:0] Reg_RFpow ; // input  signed [7:0] RFpow,
 always @(posedge clk or negedge rstn) 
     if (!rstn) Reg_RFpow <= 8'h00;
+     else if (Out_Off_Link) Reg_RFpow <= 8'h80;
      else if (Load_Next) Reg_RFpow <= RxSavePreData;
 assign RFpow = Reg_RFpow;
 

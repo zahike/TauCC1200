@@ -71,6 +71,7 @@ int main()
 {
 	int loop;
 	int data;
+	int Link;
 	int busy;
 
     init_platform();
@@ -161,7 +162,13 @@ while (1){
 		busy = CC1200[1];
 	}
 	data = CC1200[13];
-	xil_printf("RF = %d\t",(data-81));
+	Link = data-81;
+	if (Link == -209){
+		xil_printf("Link is Down \r\n");
+	} else {
+		xil_printf("RF = %d DBm\t",Link);
+	}
+
 	sleep (1);
 }
     xil_printf("GoodBye World\n\r");

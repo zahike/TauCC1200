@@ -363,10 +363,16 @@ CC1200SPI_Top CC1200SPI_Rx_Top_inst(
 .CS_n(RxCS_n)                                    // output CS_n
     );
 
-//initial begin 
+initial begin 
 //#3100000;
-//force RxGPIO_In = 4'h0;
+force RxGPIO_In = 4'h0;
 //#2000000;
+force RxMem_inst.mainWD = 32'h04407000;
+@(posedge clk);
+#1;
+@(posedge clk);
+#1;
+release RxMem_inst.mainWD;
 //force RxGPIO_In = 4'h4;
 
 //release RxGPIO_In;
@@ -374,7 +380,7 @@ CC1200SPI_Top CC1200SPI_Rx_Top_inst(
 ////force RxMem_inst.Reg_Pck_WD_count = 20'h23480;
 ////@(posedge clk);
 ////release RxMem_inst.Reg_Pck_WD_count;
-//end
+end
 wire PixelClk;          // output wire PixelClk;
 wire [15 : 0] DEWMadd;  // output wire [15 : 0] DEWMadd;
 //wire HVsync;             // input wire HVsync;
@@ -398,7 +404,7 @@ wire [23 : 0] HDMIdata; // output wire [23 : 0] HDMIdata;
     .MOSI(RxMOSI),
     .MISO(RxMISO),
     .CS_n(RxCS_n),
-    .DEWMadd(DEWMadd),
+//    .DEWMadd(DEWMadd),
     .HVsync(HVsync),
     .HMemRead(HMemRead),
     .pVDE(pVDE),
