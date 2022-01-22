@@ -24,9 +24,6 @@ module RxMem(
 input Cclk,
 input rstn,
 
-//input FraimSync,
-//input LineSync,
-
 input [11:0] RxData,
 input        RxValid,
 input        RxHeader,
@@ -36,14 +33,10 @@ input signed [7:0]  CorThre,  //input [7:0]  CorThre,
 
 output PixelClk,
 
-
 output wire FrameSync0,
 output wire FrameSync1,
-output wire LineSync  ,
 
-//output [31:0] Deb_CS_On,
-//output [31:0] Deb_CS_Off,
-output Out_Off_Link,
+input Out_Off_Link,
 
 input SCLK,
 input MOSI,
@@ -58,83 +51,27 @@ output [23:0] HDMIdata,
 
 output DeMemEn,
 output [11:0] DeMemData,
-output [15:0] DeMemADD
+output [15:0] DeMemADD,
+output [19:0] DeHDMIadd
 
     );
 wire [31:0] RegVsync0 = 32'h93aaaade;
 wire [31:0] RegVsync1 = 32'h935555de;
-wire [31:0] RegHsync  = 32'h6cf4ae21;
-    
 ///////////////////// SPI test ///////////////////// 
-//reg [31:0] Reg_CS_On;
-//always @(posedge Cclk or negedge rstn) 
-//    if (!rstn) Reg_CS_On <= 32'h00000000;
-//     else if (CS_n) Reg_CS_On <= 32'h00000000;
-//     else Reg_CS_On <= Reg_CS_On + 1;
-////assign Deb_CS_On = Reg_CS_On;
-//reg [31:0] Reg_CS_Off;
-////always @(posedge Cclk or negedge rstn) 
-////    if (!rstn) Reg_CS_Off <= 32'h00000000;
-////     else if (!CS_n) Reg_CS_Off <= 32'h00000000;
-////     else Reg_CS_Off <= Reg_CS_Off + 1;
-//always @(posedge Cclk or negedge rstn) 
-//    if (!rstn) Reg_CS_Off <= 32'h00000000;
-//     else if (FrameSync0 || FrameSync1) Reg_CS_Off <= 32'h00000000;
-//     else Reg_CS_Off <= Reg_CS_Off + 1;
-////assign Deb_CS_Off = Reg_CS_Off;
-reg [31:0] mainWD;
-always @(posedge Cclk or negedge rstn) 
-    if (!rstn) mainWD <= 32'h00000000;
-     else if (!CS_n) mainWD <= 32'h00000000;
-     else if (mainWD == 32'h04408000) mainWD <= 32'h04408000;
-     else mainWD <= mainWD + 1;
-assign Out_Off_Link = (mainWD == 32'h04408000) ? 1'b1 : 1'b0;
-
-reg ZeroPadOn;
-reg [7:0] ZeroPadCount;
-reg [15:0] NextLineAdd;
-reg [19:0] Reg_Pck_WD_count;
-always @(posedge Cclk or negedge rstn) 
-    if (!rstn) Reg_Pck_WD_count <= 20'h00000;
-     else if (!CS_n) Reg_Pck_WD_count <= 20'h00000;
-     else if (ZeroPadCount == 8'h50) Reg_Pck_WD_count <= 20'h00000;
-//     else if (NextLineAdd == 16'h9600) Reg_Pck_WD_count <= 20'h00000;
-     else if (Reg_Pck_WD_count == 20'h23500) Reg_Pck_WD_count <= 20'h23500;
-     else Reg_Pck_WD_count <= Reg_Pck_WD_count + 1;
-
-always @(posedge Cclk or negedge rstn) 
-    if (!rstn) ZeroPadOn <= 1'b0;
-     else if (Reg_Pck_WD_count == 20'h234ff) ZeroPadOn <= 1'b1;
-     else if (ZeroPadCount == 8'h4f) ZeroPadOn <= 1'b0;
-     
-always @(posedge Cclk or negedge rstn) 
-    if (!rstn) ZeroPadCount <= 8'h00;
-     else if (!ZeroPadOn) ZeroPadCount <= 8'h00; 
-     else ZeroPadCount <= ZeroPadCount + 1; 
-
-    
 reg DelSCLK;
 always @(posedge Cclk or negedge rstn)
     if (!rstn) DelSCLK <= 1'b0;
      else DelSCLK <= SCLK;
 
+///////////// corolation may not be needed ///////////// 
 reg [5:0] CorCount;
 always @(posedge Cclk or negedge rstn)
     if (!rstn) CorCount <= 6'h2f;
      else if (!RxHeader) CorCount <= 6'h2f;
      else if (DelSCLK && !SCLK) CorCount <= CorCount - 1;
 
-always @(posedge Cclk or negedge rstn) 
-    if (!rstn) NextLineAdd <= 16'h0050;
-     else if (FrameSync0 || FrameSync1) NextLineAdd <= 16'h0050;
-     else if (Out_Off_Link && (NextLineAdd == 16'h9600)) NextLineAdd <= 16'h0050;
-     else if (NextLineAdd == 16'h9600) NextLineAdd <= 16'h9600;
-     else if (RxAddValid) NextLineAdd <= RxAdd + 16'h0050;
-     else if (Reg_Pck_WD_count == 20'h234ff) NextLineAdd <= NextLineAdd + 16'h0050;
-     
 wire [47:0] HeadVsync0 = {RegVsync0,16'h0000};
 wire [47:0] HeadVsync1 = {RegVsync1,16'h0000};
-wire [47:0] HeadHsync  = {RegHsync ,NextLineAdd};
 
 reg signed [7:0] Fram0CorCount;
 always @(posedge Cclk or negedge rstn)
@@ -148,16 +85,9 @@ always @(posedge Cclk or negedge rstn)
      else if (!RxHeader) Fram1CorCount <= 8'h00;
      else if ((!DelSCLK && SCLK) && (MISO == HeadVsync1[CorCount])) Fram1CorCount <= Fram1CorCount + 1;
      else if ((!DelSCLK && SCLK) && (MISO != HeadVsync1[CorCount])) Fram1CorCount <= Fram1CorCount - 1;
-reg signed [7:0] LineCorCount;
-always @(posedge Cclk or negedge rstn)
-    if (!rstn) LineCorCount <= 8'h00;
-     else if (!RxHeader) LineCorCount <= 8'h00;
-     else if ((!DelSCLK && SCLK) && (MISO == HeadHsync[CorCount])) LineCorCount <= LineCorCount + 1;
-     else if ((!DelSCLK && SCLK) && (MISO != HeadHsync[CorCount])) LineCorCount <= LineCorCount - 1;
 
 assign FrameSync0 = (Fram0CorCount > CorThre) ? 1'b1 : 1'b0;
 assign FrameSync1 = (Fram1CorCount > CorThre) ? 1'b1 : 1'b0;
-assign LineSync   = (LineCorCount  > CorThre) ? 1'b1 : 1'b0;
 
 reg Reg_FraimSync;
 always @(posedge Cclk or negedge rstn)  
@@ -165,25 +95,48 @@ always @(posedge Cclk or negedge rstn)
      else if (RxAdd && FrameSync0) Reg_FraimSync <= 1'b0;
      else if (RxAdd && FrameSync1) Reg_FraimSync <= 1'b1;
 assign FraimSync = Reg_FraimSync;
+///////////// End Of corolation may not be needed ///////////// 
 
      
 ////////////////// End Of SPI test ////////////////// 
-wire [3:0] SPIDataValid = 0;
-wire [11:0] SPIData[3:0];
-wire [15:0] SPIDataAdd[3:0];
+// Zero pading watch dog 
+reg ZeroPadOn;
+reg [7:0] ZeroPadCount;
+reg [19:0] Reg_Pck_WD_count;
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) Reg_Pck_WD_count <= 20'h00000;
+     else if (!CS_n) Reg_Pck_WD_count <= 20'h00000;
+     else if (ZeroPadCount == 8'h50) Reg_Pck_WD_count <= 20'h00000;
+     else if (Reg_Pck_WD_count == 20'h23500) Reg_Pck_WD_count <= 20'h23500;
+     else Reg_Pck_WD_count <= Reg_Pck_WD_count + 1;
+
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) ZeroPadOn <= 1'b0;
+     else if (Reg_Pck_WD_count == 20'h234ff) ZeroPadOn <= 1'b1;
+     else if (ZeroPadCount == 8'h4f) ZeroPadOn <= 1'b0;
+     
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) ZeroPadCount <= 8'h00;
+     else if (!ZeroPadOn) ZeroPadCount <= 8'h00; 
+     else ZeroPadCount <= ZeroPadCount + 1; 
+// Write memory address
+reg [15:0] NextLineAdd;
+always @(posedge Cclk or negedge rstn) 
+    if (!rstn) NextLineAdd <= 16'h0050;
+     else if (Out_Off_Link && (NextLineAdd == 16'h9600)) NextLineAdd <= 16'h0050;
+     else if (RxAddValid) NextLineAdd <= RxAdd + 16'h0050;
+     else if (Reg_Pck_WD_count == 20'h234ff) NextLineAdd <= NextLineAdd + 16'h0050;
+     else if (NextLineAdd == 16'h9600) NextLineAdd <= 16'h9600;
     
 reg [15:0] WMadd;
 always @(posedge Cclk or negedge rstn) 
     if (!rstn) WMadd <= 16'h0000;
-     else if (FrameSync0 || FrameSync1) WMadd <= 16'h0000; 
      else if (Out_Off_Link && (WMadd == 16'h9600)) WMadd <= 16'h0000;
+     else if (RxAddValid)  WMadd <= RxAdd; 
      else if (WMadd == 16'h9600) WMadd <= 16'h9600;
      else if (RxValid)   WMadd <= WMadd + 1;
      else if (ZeroPadOn)   WMadd <= WMadd + 1;
-     else if (RxAddValid)  WMadd <= RxAdd; 
      else if (Reg_Pck_WD_count == 20'h234ff)  WMadd <= NextLineAdd; 
-
-//assign DEWMadd = WMadd;
 
 wire        WriteMemEn   = (ZeroPadOn) ? ZeroPadOn : RxValid;    
 wire [11:0] WriteMemData = (ZeroPadOn) ?   12'h000 : RxData;    
@@ -208,16 +161,16 @@ assign  DeMemData = WriteMemData ;
 assign  DeMemADD  = WMadd        ;
 
 wire [9:0] GotPktNum = (RxAdd[15:4]/5);
-reg [639:0] Reg_Getpkt;
+reg [479:0] Reg_Getpkt;
 wire [15:0] CheckAdd[0:639];
 genvar i;
 generate 
-for (i=0;i<640;i=i+1) begin 
+for (i=0;i<480;i=i+1) begin 
 assign CheckAdd[i] = 16'h0005 + (8'h50*i);
     always @(posedge Cclk or negedge rstn) 
         if (!rstn) Reg_Getpkt[i] <= 1'b0;
          else if (!WMadd) Reg_Getpkt[i] <= 1'b0;
-         else if (mainWD == 32'h04408000) Reg_Getpkt[i] <= 1'b0;
+         else if (Out_Off_Link) Reg_Getpkt[i] <= 1'b0;
          else if (  !CS_n   && (WMadd == CheckAdd[i])) Reg_Getpkt[i] <= 1'b1;
          else if (ZeroPadOn && (WMadd == CheckAdd[i])) Reg_Getpkt[i] <= 1'b0;
 end
@@ -268,17 +221,8 @@ always @(posedge Cclk or negedge rstn)
     if (!rstn) HRadd <= 20'h00001;
      else if (!HVsync) HRadd <= 20'h00001;
      else if ((Cnt_Div_Clk == 3'b000) && HMemRead) HRadd <= HRadd + 1;
+assign DeHDMIadd = HRadd;
 
-//reg DisRFpktOn;
-//always @(posedge Cclk or negedge rstn)
-//    if (!rstn) DisRFpktOn <= 1'b0;
-//     else if (!HVsync) DisRFpktOn <= 1'b0;
-//     else if (HRadd == 20'h4ab01) DisRFpktOn <= 1'b1;
-//reg [11:0] DisRFpktAdd; 
-//always @(posedge Cclk or negedge rstn)
-//    if (!rstn) DisRFpktAdd <= 12'h000;
-//     else if (!DisRFpktOn) DisRFpktAdd <= 12'h000;
-//     else if ((Cnt_Div_Clk == 3'b000) && HMemRead) DisRFpktAdd <= DisRFpktAdd + 1;
 reg DisRFpktOn;
 always @(posedge Cclk or negedge rstn)
     if (!rstn) DisRFpktOn <= 1'b0;

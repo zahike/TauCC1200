@@ -135,6 +135,7 @@ xilinx.com:ip:clk_wiz:6.0\
 xilinx.com:ip:processing_system7:5.5\
 digilentinc.com:ip:rgb2dvi:1.4\
 xilinx.com:ip:proc_sys_reset:5.0\
+xilinx.com:ip:xlconstant:1.1\
 "
 
    set list_ips_missing ""
@@ -909,6 +910,12 @@ proc create_root_design { parentCell } {
   # Create instance: rst_clk_wiz_0_50M1, and set properties
   set rst_clk_wiz_0_50M1 [ create_bd_cell -type ip -vlnv xilinx.com:ip:proc_sys_reset:5.0 rst_clk_wiz_0_50M1 ]
 
+  # Create instance: xlconstant_0, and set properties
+  set xlconstant_0 [ create_bd_cell -type ip -vlnv xilinx.com:ip:xlconstant:1.1 xlconstant_0 ]
+  set_property -dict [ list \
+   CONFIG.CONST_VAL {0} \
+ ] $xlconstant_0
+
   # Create interface connections
   connect_bd_intf_net -intf_net AXI_BayerToRGB_0_m_axis_video [get_bd_intf_pins AXI_BayerToRGB_0/m_axis_video] [get_bd_intf_pins TxSyntPic_0/s_axis_video]
   connect_bd_intf_net -intf_net MIPI_CSI_2_RX_0_m_axis_video [get_bd_intf_pins AXI_BayerToRGB_0/s_axis_video] [get_bd_intf_pins MIPI_CSI_2_RX_0/m_axis_video]
@@ -993,6 +1000,7 @@ proc create_root_design { parentCell } {
   connect_bd_net -net rst_clk_wiz_0_50M_peripheral_reset [get_bd_pins MIPI_D_PHY_RX_0/aRst] [get_bd_pins rst_clk_wiz_0_50M/peripheral_reset]
   connect_bd_net -net sccb_data_in_0_1 [get_bd_ports sccb_data_in_0] [get_bd_pins SCCBGPIO_Top_0/sccb_data_in]
   connect_bd_net -net sys_clock_1 [get_bd_ports sys_clock] [get_bd_pins clk_wiz_0/clk_in1]
+  connect_bd_net -net xlconstant_0_dout [get_bd_pins xlconstant_0/dout]
 
   # Create address segments
   create_bd_addr_seg -range 0x00010000 -offset 0x43C20000 [get_bd_addr_spaces processing_system7_0/Data] [get_bd_addr_segs APB_M_0/Reg] SEG_APB_M_0_Reg

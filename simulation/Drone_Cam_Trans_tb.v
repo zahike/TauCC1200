@@ -86,7 +86,7 @@ m_axis_video_tuser  = 0;   // input         s_axis_video_tuser ,
 m_axis_video_tlast  = 0;   // input         s_axis_video_tlast , 
 @(posedge rstn);
 #100;
-repeat (5)begin 
+repeat (15)begin 
         wrLine(1);
         repeat (479) wrLine(0);
 //        repeat (1000000) @(posedge clk);
@@ -282,6 +282,7 @@ end
     .TranAdd (TranAdd),                  // output [15:0] TranAdd,  
     .RxData (),//RxData),                      // output wire [11 : 0] RxData;
     .RxValid(),//RxValid),                    // output wire RxValid;
+    .Out_Off_Link(1'b0),//Out_Off_Link), //output Out_Off_Link,
     .FrameSync(FrameSync),                // output wire FrameSync;
     .CS_nCounter(CS_nCounter),            // output wire [15 : 0] CS_nCounter;
     .ShiftMISO(ShiftMISO),                // output wire [7 : 0] ShiftMISO;
@@ -321,6 +322,8 @@ wire [15:0] RxAdd     ;        // output [15:0] RxAdd,
 wire        RxAddValid;        // output        RxAddValid,
 wire signed [7:0]  CorThre;  //output [7:0]  CorThre,
 
+wire   Out_Off_Link   ;     //output Out_Off_Link,
+
 CC1200SPI_Top CC1200SPI_Rx_Top_inst(
 .APBclk (aclk ),
 .clk    (clk    ),
@@ -350,7 +353,8 @@ CC1200SPI_Top CC1200SPI_Rx_Top_inst(
 .RxAdd     (RxAdd     ),        // output [15:0] RxAdd,
 .RxAddValid(RxAddValid),        // output        RxAddValid,
 .CorThre   (CorThre),              //output [7:0]  CorThre
-                                        // 
+.Out_Off_Link(Out_Off_Link),//output Out_Off_Link,
+                  // 
 .FrameSync(),//FrameSync),            // output FrameSync,
 .LineSync (),//LineSync ),            // output LineSync,                                        
  
@@ -363,24 +367,24 @@ CC1200SPI_Top CC1200SPI_Rx_Top_inst(
 .CS_n(RxCS_n)                                    // output CS_n
     );
 
-initial begin 
-//#3100000;
-force RxGPIO_In = 4'h0;
-//#2000000;
-force RxMem_inst.mainWD = 32'h04407000;
-@(posedge clk);
-#1;
-@(posedge clk);
-#1;
-release RxMem_inst.mainWD;
-//force RxGPIO_In = 4'h4;
+//initial begin 
+////#3100000;
+//force RxGPIO_In = 4'h0;
+////#2000000;
+//force RxMem_inst.mainWD = 32'h04407000;
+//@(posedge clk);
+//#1;
+//@(posedge clk);
+//#1;
+//release RxMem_inst.mainWD;
+////force RxGPIO_In = 4'h4;
 
-//release RxGPIO_In;
-////@(RxMem_inst.Reg_Pck_WD_count == 20'h05000);
-////force RxMem_inst.Reg_Pck_WD_count = 20'h23480;
-////@(posedge clk);
-////release RxMem_inst.Reg_Pck_WD_count;
-end
+////release RxGPIO_In;
+//////@(RxMem_inst.Reg_Pck_WD_count == 20'h05000);
+//////force RxMem_inst.Reg_Pck_WD_count = 20'h23480;
+//////@(posedge clk);
+//////release RxMem_inst.Reg_Pck_WD_count;
+//end
 wire PixelClk;          // output wire PixelClk;
 wire [15 : 0] DEWMadd;  // output wire [15 : 0] DEWMadd;
 //wire HVsync;             // input wire HVsync;
@@ -400,6 +404,7 @@ wire [23 : 0] HDMIdata; // output wire [23 : 0] HDMIdata;
     .RxAddValid(RxAddValid), 
     .CorThre(CorThre),  //input [7:0]  CorThre,   
     .PixelClk(PixelClk),
+    .Out_Off_Link(Out_Off_Link),  //output Out_Off_Link,
     .SCLK(RxSCLK),
     .MOSI(RxMOSI),
     .MISO(RxMISO),
