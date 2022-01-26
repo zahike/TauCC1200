@@ -169,7 +169,7 @@ for (i=0;i<480;i=i+1) begin
 assign CheckAdd[i] = 16'h0005 + (8'h50*i);
     always @(posedge Cclk or negedge rstn) 
         if (!rstn) Reg_Getpkt[i] <= 1'b0;
-         else if (!WMadd) Reg_Getpkt[i] <= 1'b0;
+//         else if (!WMadd) Reg_Getpkt[i] <= 1'b0;
          else if (Out_Off_Link) Reg_Getpkt[i] <= 1'b0;
          else if (  !CS_n   && (WMadd == CheckAdd[i])) Reg_Getpkt[i] <= 1'b1;
          else if (ZeroPadOn && (WMadd == CheckAdd[i])) Reg_Getpkt[i] <= 1'b0;
